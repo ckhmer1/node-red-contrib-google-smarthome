@@ -24,6 +24,54 @@ module.exports = function (RED) {
     const path = require('path');
     const util = require('util');
 
+    const STATES_TYPE = {
+        color: {
+            spectrumHsv: {
+                hue: formats.Formats.FLOAT,
+                saturation: formats.Formats.FLOAT,
+                value: formats.Formats.FLOAT
+            }
+        },
+        currentFoodQuantity: formats.Formats.FLOAT,
+        dispenseItems: {
+            amountRemaining: {
+                amount: formats.Formats.FLOAT,
+            },
+            amountLastDispensed: {
+                amount: formats.Formats.FLOAT,
+            },
+        },
+        currentFanSpeedPercent: formats.Formats.FLOAT,
+        currentFillPercent: formats.Formats.FLOAT,
+        networkUsageMB: formats.Formats.FLOAT,
+        networkUsageLimitMB: formats.Formats.FLOAT,
+        lastNetworkDownloadSpeedTest: {
+            downloadSpeedMbps: formats.Formats.FLOAT,
+        },
+        lastNetworkUploadSpeedTest: {
+            uploadSpeedMbps: formats.Formats.FLOAT,
+        },
+        openPercent: formats.Formats.FLOAT,
+        openState: {
+            openPercent: formats.Formats.FLOAT,
+        },
+        rotationDegrees: formats.Formats.FLOAT,
+        rotationPercent: formats.Formats.FLOAT,
+        currentSensorStateData: {
+            rawValue: formats.Formats.FLOAT,
+        },
+        temperatureSetpointCelsius: formats.Formats.FLOAT,
+        humiditySetpointPercent: formats.Formats.INT,
+        humidityAmbientPercent: formats.Formats.INT,
+        temperatureAmbientCelsius: formats.Formats.FLOAT,
+        thermostatHumidityAmbient: formats.Formats.INT,
+        thermostatTemperatureAmbient: formats.Formats.FLOAT,
+        thermostatTemperatureSetpoint: formats.Formats.FLOAT,
+        thermostatTemperatureAmbient: formats.Formats.FLOAT,
+        thermostatTemperatureSetpointHigh: formats.Formats.FLOAT,
+        thermostatTemperatureSetpointLow: formats.Formats.FLOAT,
+    };
+
     /******************************************************************************************************************
      *
      *
@@ -1241,6 +1289,11 @@ module.exports = function (RED) {
                         fill = "green";
                         text = thermostat_mode.substr(0, 1).toUpperCase() + st;
                     }
+                    if (this.trait.humiditysetting) {
+                        text += ' ' + this.states.humidityAmbientPercent + "% ";
+                    } else if (this.states.thermostatHumidityAmbient !== undefined) {
+                        text += ' ' + this.states.thermostatHumidityAmbient + "% ";
+                    }
                 } else if (this.device_type === "SENSOR") {
                     if (this.trait.brightness) {
                         text += ' bri ' + this.states.brightness;
@@ -1253,7 +1306,7 @@ module.exports = function (RED) {
                     }
                     if (this.trait.openclose) {
                         if (this.states.openPercent !== undefined) {
-                            text += ' ' + this.states.humidityAmbientPercent + "% ";
+                            text += ' ' + this.states.openPercent + "% ";
                         }
                     }
                 } else if (this.device_type === "WINDOW") {
@@ -1337,11 +1390,13 @@ module.exports = function (RED) {
             });
 
             // Copy the command params to the payload
-            Object.keys(params).forEach(function (key) {
-                if (!msg.payload.hasOwnProperty(key) && params[key] !== original_params[key]) {
-                    msg.payload[key] = params[key];
-                }
-            });
+            if (params) {
+                Object.keys(params).forEach(function (key) {
+                    if (!msg.payload.hasOwnProperty(key) && params[key] !== original_params[key]) {
+                        msg.payload[key] = params[key];
+                    }
+                });
+            }
 
             // Copy the command original params to the payload
             /*Object.keys(original_params).forEach(function (key) {
@@ -1610,7 +1665,7 @@ module.exports = function (RED) {
                         SensorState: payload
                     });  // tell Google ...
                 } else if (topic.toUpperCase() === 'LOCKUNLOCK') {
-                    let payload = { };
+                    let payload = {};
                     if (typeof msg.payload.followUpToken === 'string') {
                         payload.followUpToken = msg.payload.followUpToken;
                     }
@@ -1637,7 +1692,7 @@ module.exports = function (RED) {
                         }
                     });  // tell Google ...
                 } else if (topic.toUpperCase() === 'OPENCLOSE') {
-                    let payload = { };
+                    let payload = {};
                     if (typeof msg.payload.followUpToken === 'string') {
                         payload.followUpToken = msg.payload.followUpToken;
                     }
@@ -1871,17 +1926,20 @@ module.exports = function (RED) {
             return traits;
         }
 
-        setState(key, value, states) {
+        setState(key, value, states, float_values) {
             const me = this;
             let differs = false;
             const old_state = states[key];
             let val_type = typeof old_state;
             let new_state = undefined;
+            if (float_values == undefined) {
+                float_values = STATES_TYPE[key] || {};
+            }
             if (val_type === 'number') {
-                if (old_state % 1 === 0) {
-                    new_state = formats.FormatValue(formats.Formats.INT, key, value);
-                } else {
+                if (float_values === formats.Formats.FLOAT) {
                     new_state = formats.FormatValue(formats.Formats.FLOAT, key, value);
+                } else {
+                    new_state = formats.FormatValue(formats.Formats.INT, key, value);
                 }
             } else if (val_type === 'string') {
                 new_state = formats.FormatValue(formats.Formats.STRING, key, value);
@@ -1904,7 +1962,7 @@ module.exports = function (RED) {
                         }
                         Object.keys(old_state).forEach(function (key) {
                             if (typeof value[key] !== 'undefined') {
-                                if (me.setState(key, value[key], old_state)) {
+                                if (me.setState(key, value[key], old_state, float_values[key] || {})) {
                                     differs = true;
                                 }
                             }
