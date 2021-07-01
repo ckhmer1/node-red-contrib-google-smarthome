@@ -24,52 +24,13 @@ module.exports = function (RED) {
     const path = require('path');
     const util = require('util');
 
-    const STATES_TYPE = {
-        color: {
-            spectrumHsv: {
-                hue: formats.Formats.FLOAT,
-                saturation: formats.Formats.FLOAT,
-                value: formats.Formats.FLOAT
-            }
-        },
-        currentFoodQuantity: formats.Formats.FLOAT,
-        dispenseItems: {
-            amountRemaining: {
-                amount: formats.Formats.FLOAT,
-            },
-            amountLastDispensed: {
-                amount: formats.Formats.FLOAT,
-            },
-        },
-        currentFanSpeedPercent: formats.Formats.FLOAT,
-        currentFillPercent: formats.Formats.FLOAT,
-        networkUsageMB: formats.Formats.FLOAT,
-        networkUsageLimitMB: formats.Formats.FLOAT,
-        lastNetworkDownloadSpeedTest: {
-            downloadSpeedMbps: formats.Formats.FLOAT,
-        },
-        lastNetworkUploadSpeedTest: {
-            uploadSpeedMbps: formats.Formats.FLOAT,
-        },
-        openPercent: formats.Formats.FLOAT,
-        openState: {
-            openPercent: formats.Formats.FLOAT,
-        },
-        rotationDegrees: formats.Formats.FLOAT,
-        rotationPercent: formats.Formats.FLOAT,
-        currentSensorStateData: {
-            rawValue: formats.Formats.FLOAT,
-        },
-        temperatureSetpointCelsius: formats.Formats.FLOAT,
-        humiditySetpointPercent: formats.Formats.INT,
-        humidityAmbientPercent: formats.Formats.INT,
-        temperatureAmbientCelsius: formats.Formats.FLOAT,
-        thermostatHumidityAmbient: formats.Formats.INT,
-        thermostatTemperatureAmbient: formats.Formats.FLOAT,
-        thermostatTemperatureSetpoint: formats.Formats.FLOAT,
-        thermostatTemperatureAmbient: formats.Formats.FLOAT,
-        thermostatTemperatureSetpointHigh: formats.Formats.FLOAT,
-        thermostatTemperatureSetpointLow: formats.Formats.FLOAT,
+    const Formats = {
+        BOOL: 1,
+        INT: 2,
+        FLOAT: 4,
+        STRING: 8,
+        MANDATORY: 128,
+        COPY_OBJECT: 256,
     };
 
     /******************************************************************************************************************
@@ -95,6 +56,7 @@ module.exports = function (RED) {
                 return;
             }
 
+            this.state_types = {};
             this.trait = {
                 appselector: config.trait_appselector || false,
                 armdisarm: config.trait_armdisarm || false,
@@ -643,6 +605,8 @@ module.exports = function (RED) {
                 this.debug(".constructor: Toggles disabled");
             }
 
+            this.updateStateTypesForTraits();
+
             // GoogleSmartHomeNode -> (client.registerDevice -> DeviceNode.registerDevice), app.registerDevice
             this.states = this.clientConn.register(this, 'device', config.name);
 
@@ -711,6 +675,240 @@ module.exports = function (RED) {
             return device;
         }
 
+        updateStateTypesForTraits() {
+            let me = this;
+            let state_types = me.state_types;
+            state_types['online'] = Formats.BOOL + Formats.MANDATORY;
+
+            if (me.trait.apps) {
+                state_types['currentApplication'] = Formats.STRING + Formats.MANDATORY;
+            }
+            if (me.trait.armdisarm) {
+                state_types['isArmed'] = Formats.BOOL + Formats.MANDATORY;
+                state_types['currentArmLevel'] = Formats.STRING + Formats.MANDATORY;
+                state_types['exitAllowance'] = Formats.INT;
+            }
+            if (me.trait.brightness) {
+                state_types['brightness'] = Formats.INT;
+            }
+            if (me.trait.colorsetting) {
+                if ((me.color_model === "rgb") || (me.color_model === 'rgb_temp')) {
+                    state_types['color'] = {
+                        spectrumRgb: Formats.INT + Formats.MANDATORY
+                    };
+                } else if ((me.color_model === "hsv") || (me.color_model === "hsv_temp")) {
+                    state_types['color'] = {
+                        spectrumHsv: {
+                            hue: Formats.FLOAT + Formats.MANDATORY,           // float, representing hue as positive degrees in the range of [0.0, 360.0)
+                            saturation: Formats.FLOAT + Formats.MANDATORY,    // float, representing saturation as a percentage in the range [0.0, 1.0]
+                            value: Formats.FLOAT + Formats.MANDATORY          // float, representing value as a percentage in the range [0.0, 1.0]
+                        }
+                    };
+                } else {
+                    state_types['color'] = {};
+                }
+                if (me.color_model !== "rgb" && me.color_model !== "hsv") {
+                    state_types.color.temperatureK = Formats.INT + Formats.MANDATORY;
+                }
+            }
+            if (me.trait.cook) {
+                state_types['currentCookingMode'] = Formats.STRING + Formats.MANDATORY;
+                state_types['currentFoodPreset'] = Formats.STRING;
+                state_types['currentFoodQuantity'] = Formats.FLOAT;
+                state_types['currentFoodUnit'] = Formats.STRING;
+            }
+            if (me.trait.dispense) {
+                state_types['dispenseItems'] = [
+                    {
+                        itemName: Formats.STRING,
+                        amountRemaining: {
+                            amount: Formats.FLOAT,
+                            unit: Formats.STRING,
+                        },
+                        amountLastDispensed: {
+                            amount: Formats.FLOAT,
+                            unit: Formats.STRING,
+                        },
+                        isCurrentlyDispensing: Formats.BOOL,
+                    },
+                    'itemName'
+                ];
+            }
+            if (me.trait.dock) {
+                state_types['isDocked'] = Formats.BOOL;
+            }
+            if (me.trait.energystorage) {
+                state_types['descriptiveCapacityRemaining'] = Formats.STRING + Formats.MANDATORY;
+                state_types['capacityRemaining'] = [
+                    {
+                        rawValue: Formats.INT + Formats.MANDATORY,
+                        unit: Formats.STRING + Formats.MANDATORY,
+                    }
+                ];
+                state_types['capacityUntilFull'] = [
+                    {
+                        rawValue: Formats.INT + Formats.MANDATORY,
+                        unit: Formats.STRING + Formats.MANDATORY,
+                    }
+                ];
+                state_types['isCharging'] = Formats.BOOL;
+                state_types['isPluggedIn'] = Formats.BOOL;
+            }
+            if (me.trait.fanspeed) {
+                state_types['currentFanSpeedSetting'] = Formats.STRING;
+                state_types['currentFanSpeedPercent'] = Formats.INT;
+            }
+            if (me.trait.fill) {
+                state_types['isFilled'] = Formats.BOOL + Formats.MANDATORY;
+                state_types['currentFillLevel'] = Formats.STRING;
+                state_types['currentFillPercent'] = Formats.FLOAT;
+            }
+            if (me.trait.humiditysetting) {
+                state_types['humiditySetpointPercent'] = Formats.INT;
+                state_types['humidityAmbientPercent'] = Formats.INT;
+            }
+            if (me.trait.inputselector) {
+                state_types['currentInput'] = Formats.STRING + Formats.MANDATORY;
+            }
+            if (me.trait.lighteffects) {
+                state_types['activeLightEffect'] = Formats.STRING + Formats.MANDATORY;
+                state_types['lightEffectEndUnixTimestampSec'] = Formats.INT;
+            }
+            // Locator
+            if (me.trait.lockunlock) {
+                state_types['isLocked'] = Formats.BOOL;
+                state_types['isJammed'] = Formats.BOOL;
+            }
+            if (me.trait.mediastate) {
+                // INACTIVE STANDBY ACTIVE
+                state_types['activityState'] = Formats.STRING;
+                // PAUSED PLAYING FAST_FORWARDING REWINDING BUFFERING STOPPED
+                state_types['playbackState'] = Formats.STRING;
+            }
+            if (me.trait.modes) {
+                state_types['currentModeSettings'] = Formats.COPY_OBJECT + Formats.STRING; // See the docs
+            }
+            if (me.trait.networkcontrol) {
+                state_types['networkEnabled'] = Formats.BOOL;
+                state_types['networkSettings'] = {
+                    ssid: Formats.STRING + Formats.MANDATORY
+                };
+                state_types['guestNetworkEnabled'] = Formats.BOOL;
+                state_types['guestNetworkSettings'] = {
+                    ssid: Formats.STRING + Formats.MANDATORY
+                };
+                state_types['numConnectedDevices'] = Formats.INT;
+                state_types['networkUsageMB'] = Formats.FLOAT;
+                state_types['networkUsageLimitMB'] = Formats.FLOAT;
+                state_types['networkUsageUnlimited'] = Formats.BOOL;
+                state_types['lastNetworkDownloadSpeedTest'] = {
+                    downloadSpeedMbps: Formats.FLOAT,
+                    unixTimestampSec: Formats.INT,
+                    status: Formats.STRING
+                };
+                state_types['lastNetworkUploadSpeedTest'] = {
+                    uploadSpeedMbps: Formats.FLOAT,
+                    unixTimestampSec: Formats.INT,
+                    status: Formats.STRING
+                };
+                state_types['networkSpeedTestInProgress'] = Formats.BOOL;
+            }
+            // ObjectDetection 
+            if (me.trait.onoff) {
+                state_types['on'] = Formats.BOOL;
+            }
+            if (me.trait.openclose) {
+                if (me.open_direction.length < 2) {
+                    state_types['openPercent'] = Formats.FLOAT + Formats.MANDATORY;
+                } else {
+                    state_types['openState'] = [
+                        {
+                            openPercent: Formats.FLOAT + Formats.MANDATORY,
+                            openDirection: Formats.STRING + Formats.MANDATORY
+                        },
+                        'openDirection'
+                    ];
+                }
+            }
+            // Reboot 
+            if (me.trait.rotation) {
+                if (me.supports_degrees) {
+                    state_types['rotationDegrees'] = Formats.FLOAT;
+                }
+                if (me.supports_percent) {
+                    state_types['rotationPercent'] = Formats.FLOAT;
+                }
+            }
+            if (me.trait.runcycle) {
+                state_types['currentRunCycle'] = [
+                    {
+                        currentCycle: Formats.STRING + Formats.MANDATORY,
+                        nextCycle: Formats.STRING,
+                        lang: Formats.STRING + Formats.MANDATORY
+                    }
+                ];
+                state_types['currentTotalRemainingTime'] = Formats.INT + Formats.MANDATORY;
+                state_types['currentCycleRemainingTime'] = Formats.INT + Formats.MANDATORY;
+            }
+            // Scene 
+            if (me.trait.sensorstate) {
+                state_types['currentSensorStateData'] = [
+                    {
+                        name: Formats.STRING + Formats.MANDATORY,
+                        currentSensorState: Formats.STRING,
+                        rawValue: Formats.FLOAT
+                    },
+                    'name'
+                ];
+            }
+            if (me.trait.softwareupdate) {
+                state_types['lastSoftwareUpdateUnixTimestampSec'] = Formats.INT + Formats.MANDATORY;
+            }
+            if (me.trait.startstop) {
+                state_types['isRunning'] = Formats.BOOL + Formats.MANDATORY;
+                state_types['isPaused'] = Formats.BOOL;
+                state_types['activeZones'] = [
+                    Formats.STRING
+                ];
+            }
+            if (me.trait.statusreport) {
+                state_types['currentStatusReport'] = [
+                    {
+                        blocking: Formats.BOOL,
+                        deviceTarget: Formats.STRING,
+                        priority: Formats.INT,
+                        statusCode: Formats.STRING
+                    }
+                ];
+            }
+            if (me.trait.temperaturecontrol) {
+                state_types['temperatureSetpointCelsius'] = Formats.FLOAT;
+                state_types['temperatureAmbientCelsius'] = Formats.FLOAT;
+            }
+            if (me.trait.temperaturesetting) {
+                state_types['activeThermostatMode'] = Formats.STRING;
+                state_types['targetTempReachedEstimateUnixTimestampSec'] = Formats.INT;
+                state_types['thermostatHumidityAmbient'] = Formats.FLOAT;
+                state_types['thermostatMode'] = Formats.STRING + Formats.MANDATORY;
+                state_types['thermostatTemperatureAmbient'] = Formats.FLOAT + Formats.MANDATORY;
+                state_types['thermostatTemperatureSetpoint'] = Formats.FLOAT + Formats.MANDATORY;       // 0 TODO optional
+                state_types['thermostatTemperatureSetpointHigh'] = Formats.FLOAT + Formats.MANDATORY;  // 1 TODO optional
+                state_types['thermostatTemperatureSetpointLow'] = Formats.FLOAT + Formats.MANDATORY;   // 1 TODO optional
+            }
+            if (me.trait.timer) {
+                state_types['timerRemainingSec'] = Formats.INT + Formats.MANDATORY;
+                state_types['timerPaused'] = Formats.BOOL;
+            }
+            if (me.trait.toggles) {
+                state_types['currentToggleSettings'] = Formats.COPY_OBJECT + Formats.BOOL; // See the docs
+            }
+            // TransportControl 
+            if (me.trait.volume) {
+                state_types['currentVolume'] = Formats.INT + Formats.MANDATORY;
+                state_types['isMuted'] = Formats.BOOL;
+            }
+        }
+
         updateAttributesForTraits(device) {
             let me = this;
             let attributes = device.properties.attributes;
@@ -732,10 +930,10 @@ module.exports = function (RED) {
             }
             if (me.trait.colorsetting) {
                 attributes["commandOnlyColorSetting"] = me.command_only_colorsetting;
-                if (me.color_model !== "rgb" && me.color_model !== "rgb_temp") {
+                if (me.color_model === "rgb" || me.color_model === "rgb_temp") {
                     attributes['colorModel'] = "rgb";
                 }
-                else if (me.color_model !== "hsv" && me.color_model !== "hsv_temp") {
+                else if (me.color_model === "hsv" || me.color_model === "hsv_temp") {
                     attributes['colorModel'] = "hsv";
                 }
                 if (me.color_model !== "rgb" && me.color_model !== "hsv") {
@@ -1358,12 +1556,7 @@ module.exports = function (RED) {
             this.debug(".updated: params = " + JSON.stringify(params));
             this.debug(".updated: original_params = " + JSON.stringify(original_params));
 
-            // Object.assign(this.states, states);
-            Object.keys(me.states).forEach(function (key) {
-                if (states.hasOwnProperty(key)) {
-                    me.setState(key, states[key], me.states);
-                }
-            });
+            me.updateState(states);
 
             this.updateStatusIcon();
 
@@ -1711,6 +1904,36 @@ module.exports = function (RED) {
                             followUpResponse: payload
                         }
                     });  // tell Google ...
+                } else if (topic.toUpperCase() === 'STATUSREPORT') {
+                    let payload = Array.isArray(msg.payload) ? msg.payload : [ msg.payload ];
+                    let new_payload = [];
+                    payload.forEach(sr => {
+                        let nodeId;
+                        if (sr.deviceTarget) {
+                            let properties = this.clientConn.getProperties(sr.deviceTarget);
+                            if (Object.keys(properties).length > 0) {
+                                nodeId = sr.deviceTarget;
+                            } else {
+                                nodeId = this.clientConn.getIdFromName(sr.deviceTarget);
+                            }
+                        } else {
+                            nodeId = this.device.id;
+                        }
+                        if (nodeId) {
+                            let new_report = {};
+                            this.cloneObject(new_report, sr, me.state_types['currentStatusReport'][0]);
+                            new_report.deviceTarget = nodeId;
+                            new_payload.push(new_report);
+                        }
+                    });
+                    if (me.updateState({ currentStatusReport: new_payload })) {
+                        this.clientConn.setState(this, me.states);  // tell Google ...
+
+                        if (this.passthru) {
+                            msg.payload = new_payload;
+                            this.send(msg);
+                        }
+                    }
                 } else {
                     let state_key = '';
                     Object.keys(me.states).forEach(function (key) {
@@ -1721,7 +1944,7 @@ module.exports = function (RED) {
                     });
 
                     if (state_key !== '') {
-                        const differs = me.setState(state_key, msg.payload, me.states);
+                        const differs = me.updateState({ state_key: msg.payload });
                         if (differs) {
                             me.debug(".input: " + state_key + ' ' + JSON.stringify(msg.payload));
                             this.clientConn.setState(this, me.states);  // tell Google ...
@@ -1734,15 +1957,7 @@ module.exports = function (RED) {
                         this.updateStatusIcon();
                     } else {
                         me.debug(".input: some other topic");
-                        let differs = false;
-                        Object.keys(me.states).forEach(function (key) {
-                            if (msg.payload.hasOwnProperty(key)) {
-                                me.debug(".input: set state " + key + ' to ' + JSON.stringify(msg.payload[key]));
-                                if (me.setState(key, msg.payload[key], me.states)) {
-                                    differs = true;
-                                }
-                            }
-                        });
+                        let differs = me.updateState(msg.payload);
 
                         if (differs) {
                             this.clientConn.setState(this, me.states);  // tell Google ...
@@ -1926,55 +2141,175 @@ module.exports = function (RED) {
             return traits;
         }
 
-        setState(key, value, states, float_values) {
+        updateState(new_states) {
+            const me = this;
+            let modified = false;
+            Object.keys(me.state_types).forEach(function (key) {
+                // TODO check modes, toggles, arrays, temperatureSettings ...
+                if (new_states.hasOwnProperty(key)) {
+                    if (me.setState(key, new_states[key], me.states, me.state_types[key])) {
+                        me.debug('updateState: set "' + key + '" to ' + JSON.stringify(new_states[key]));
+                        modified = true;
+                    }
+                }
+            });
+            me.debug('.updateState: new State ' + modified + ' ' + JSON.stringify(me.states));
+            return modified;
+        }
+
+        cloneObject(cur_obj, new_obj, state_values) {
+            const me = this;
+            let differs = false;
+            Object.keys(state_values).forEach(function (key) {
+                if (typeof new_obj[key] !== 'undefined' && new_obj[key] != null) {
+                    if (me.setState(key, new_obj[key], cur_obj, state_values[key] || {})) {
+                        differs = true;
+                    }
+                } else if (typeof state_values[key] === 'number' && !(state_values[key] & formats.MANDATORY)) {
+                    delete cur_obj[key];
+                }
+            });
+            return differs;
+        }
+
+        formatValue(key, value, type) {
+            let new_state;
+            if (type & Formats.FLOAT) {
+                new_state = formats.FormatValue(formats.Formats.FLOAT, key, value);
+            } else if (type & Formats.INT) {
+                new_state = formats.FormatValue(formats.Formats.INT, key, value);
+            } else if (type & Formats.STRING) {
+                new_state = formats.FormatValue(formats.Formats.STRING, key, value);
+            } else if (type & Formats.BOOL) {
+                new_state = formats.FormatValue(formats.Formats.BOOL, key, value);
+            }
+            return new_state;
+        }
+
+        setState(key, value, states, state_values) {
             const me = this;
             let differs = false;
             const old_state = states[key];
             let val_type = typeof old_state;
             let new_state = undefined;
-            if (float_values == undefined) {
-                float_values = STATES_TYPE[key] || {};
-            }
-            if (val_type === 'number') {
-                if (float_values === formats.Formats.FLOAT) {
-                    new_state = formats.FormatValue(formats.Formats.FLOAT, key, value);
-                } else {
-                    new_state = formats.FormatValue(formats.Formats.INT, key, value);
-                }
-            } else if (val_type === 'string') {
-                new_state = formats.FormatValue(formats.Formats.STRING, key, value);
-            } else if (val_type === 'boolean') {
-                new_state = formats.FormatValue(formats.Formats.BOOL, key, value);
-            } else if (val_type === 'object') {
+            if (typeof state_values === 'object') {
                 if (typeof value === "object") {
-                    if (Array.isArray(old_state)) {
+                    if (Array.isArray(state_values)) {
                         if (Array.isArray(value)) {
+                            /*
                             if (JSON.stringify(states[key]) != JSON.stringify(value)) {
                                 differs = true;
                             }
                             states[key] = value;
+                            */
+                            // checks array
+                            const ar_state_values = state_values[0];
+                            if (typeof ar_state_values === 'number') {
+                                let new_arr = [];
+                                let old_arr = Array.isArray(old_state) ? old_state : [];
+                                value.forEach((elm, idx) => {
+                                    let new_val = me.formatValue(key + '[' + idx + ']', elm, ar_state_values);
+                                    if (new_val !== undefined && new_val != null) {
+                                        new_arr.push(new_val);
+                                        if (old_arr.length > idx) {
+                                            if (old_arr[idx] != new_val) {
+                                                differs = true;
+                                            }
+                                        } else {
+                                            differs = true;
+                                        }
+                                    } else {
+                                        differs = true;
+                                    }
+                                });
+                                states[key] = new_arr;
+                            } else {
+                                // structure check
+                                let new_arr = [];
+                                let old_arr = Array.isArray(old_state) ? old_state : [];
+                                let key_id = state_values.length > 1 ? state_values[1] : undefined;
+                                value.forEach((new_obj, idx) => {
+                                    let cur_obj;
+                                    if (key_id) {
+                                        let f_arr = old_arr.filter(obj => { return obj[key_id] === new_obj[key_id] });
+                                        if (f_arr.length > 0) {
+                                            cur_obj = f_arr[0];
+                                        } else if (f_arr.length > 1) {
+                                            RED.log.error('More than one "' + key + '" for "' + key_id + '" "' + new_obj[key_id] + '"');
+                                        }
+                                    } else {
+                                        cur_obj = old_arr[idx];
+                                    }
+                                    if (cur_obj !== undefined) {
+                                        if (me.cloneObject(cur_obj, new_obj, ar_state_values)) {
+                                            differs = true;
+                                        }
+                                        if (Object.keys(cur_obj).length > 0) {
+                                            new_arr.push(cur_obj);
+                                        } else {
+                                            differs = true;
+                                        }
+                                    }
+                                });
+                                if (new_arr.length != old_arr.length) {
+                                    differs = true;
+                                }
+                                states[key] = key_id ? old_arr : new_arr;
+                            }
                         } else {
-                            throw new Error('key "' + key + '" must be an array.');
+                            RED.log.error('key "' + key + '" must be an array.');
                         }
                     } else {
                         if (Array.isArray(value)) {
-                            throw new Error('key "' + key + '" must be an object.');
-                        }
-                        Object.keys(old_state).forEach(function (key) {
-                            if (typeof value[key] !== 'undefined') {
-                                if (me.setState(key, value[key], old_state, float_values[key] || {})) {
-                                    differs = true;
+                            RED.log.error('key "' + key + '" must be an object.');
+                        } else {
+                            Object.keys(state_values).forEach(function (ikey) {
+                                if (typeof value[ikey] !== 'undefined' && value[ikey] != null) {
+                                    if (me.setState(ikey, value[ikey], old_state, state_values[ikey])) {
+                                        differs = true;
+                                    }
+                                } else if (typeof state_values[ikey] === 'number' && !(state_values[ikey] & formats.MANDATORY)) {
+                                    delete old_state[ikey];
+                                } else {
+                                    RED.log.error('key "' + key + '.' + ikey + '" is mandatory.');
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 } else {
                     if (Array.isArray(old_state)) {
-                        throw new Error('key "' + key + '" must be an array.');
+                        RED.log.error('key "' + key + '" must be an array.');
                     } else {
-                        throw new Error('key "' + key + '" must be an object.');
+                        RED.log.error('key "' + key + '" must be an object.');
                     }
                 }
+            } else if (state_values & Formats.COPY_OBJECT) {
+                if (val_type !== 'object' || Array.isArray(value)) {
+                    RED.log.error('key "' + key + '" must be an object.');
+                } else {
+                    Object.keys(old_state).forEach(function (key) {
+                        if (typeof value[key] !== 'undefined') {
+                            if (me.setState(key, value[key], old_state, state_values - Formats.COPY_OBJECT)) {
+                                differs = true;
+                            }
+                        }
+                    });
+                }
+            } else if (value == null) {
+                if (state_values & Formats.MANDATORY) {
+                    RED.log.error("key " + key + " is mandatory.");
+                } else if (old_state.hasOwnProperty(key)) {
+                    delete old_state[key];
+                    differs = true;
+                }
+            } else if (state_values & Formats.FLOAT) {
+                new_state = formats.FormatValue(formats.Formats.FLOAT, key, value);
+            } else if (state_values & Formats.INT) {
+                new_state = formats.FormatValue(formats.Formats.INT, key, value);
+            } else if (state_values & Formats.STRING) {
+                new_state = formats.FormatValue(formats.Formats.STRING, key, value);
+            } else if (state_values & Formats.BOOL) {
+                new_state = formats.FormatValue(formats.Formats.BOOL, key, value);
             }
             if (val_type !== 'object') {
                 if (new_state !== undefined) {
