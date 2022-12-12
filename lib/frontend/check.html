@@ -16,7 +16,6 @@
     <title>Google SmartHome test page</title>
 
     <script>
-        let url = '';
         let xhr = new XMLHttpRequest();
         function test_success(elmId, data) {
             if (typeof data !== "string") {
@@ -114,17 +113,27 @@
             });
         }
         function startTest() {
-            test_oauth_get(url, true);
+            let server_url = $('#server_url').val().trim();
+            if (server_url.length === 0) {
+                test_success('url_status', 'Missing URL');
+            } else {
+                if (!server_url.endsWith("/")) {
+                    server_url = server_url + "/";
+                }
+                console.log(server_url);
+                test_success('url_status', 'URL present');
+                test_oauth_get(server_url, true);
+            }
         }
 
         document.addEventListener("DOMContentLoaded", function (event) {
-            url = window.location.href.split('?')[0];
-            let i = url.lastIndexOf("/");
+            let server_url = window.location.href.split('?')[0];
+            let i = server_url.lastIndexOf("/");
             if (i > 0) {
-                url = url.substring(0, i + 1);
+                server_url = server_url.substring(0, i + 1);
             }
             test_success('check_get', 'OK');
-            test_success('url_res', url);
+            $('#server_url').val(server_url);
         });
     </script>
 </head>
@@ -134,10 +143,15 @@
         <div>
             <h2>Google SmartHome test page</h2>
         </div>
-        <b>Url: </b><span id="url_res">Waiting</span><br>
 
         <br />
         <form action="javascript:startTest()">
+
+            <div class="field">
+                <input type="text" name="server_url" id="server_url" autocapitalize="none"
+                    placeholder="server_url">
+                <label for="server_url">Server URL</label>
+            </div>
 
             <div class="field">
                 <input type="text" name="client_id" id="client_id" autocomplete="off" autocapitalize="none"
@@ -162,10 +176,13 @@
                 <label for="password">Password</label>
             </div>
 
+            <br />
+
             <button id="login-button">Test</button>
         </form>
 
         <br />
+        <span id="url_status" style="color:blue"></span><br>
         <b>GET check: </b><span id="check_get">Waiting</span><br>
         <b>GET oauth: </b><span id="oauth_get">Not started</span><br>
         <b>POST oauth: </b><span id="oauth_post">Not started</span><br>
