@@ -32,11 +32,13 @@ What this module does NOT:
 ---
 ## Prerequisites
 
-1. You are going to need a 'real' SSL certificate e.g. from [Let’s Encrypt](https://letsencrypt.org/).
-2. You also need to be able to forward TCP traffic coming in from the internet to your Node-RED server on a port you
-specify. This is not your full Node-RED server but a service started by `node-red-contrib-google-smarthome`, providing
-only the functions needed by Google.
-3. This package requires NodeJS version 10.0.0 at a minimum.
+- You need your own domain. You can use a free domain from any DynDNS provider. The DNS record for this domain must point to your host.
+- You are going to need a 'real' SSL certificate e.g. from [Let’s Encrypt](https://letsencrypt.org/). You must have either the
+  certificate files (e.g. from Certbot). Or you can use a reverse proxy with automatic certificate management, such as
+  Caddy or Traefik. Tip: There's a guide on [how to use Caddy](docs/caddy.md).
+- You need to be able to forward incoming traffic from the internet to a specific port on your host. This may be difficult if your
+  ISP uses carrier-grade NAT, or if you can't configure port forwarding on your router.
+- This package requires NodeJS version 10.0.0 at a minimum.
 
 ---
 ## Setup Instructions
@@ -177,10 +179,6 @@ and the following Google [traits](https://developers.google.com/assistant/smarth
 Example flow:
         See the flow used for the automatic tests [here](test/sh/flows.json)
 
-#### Other device nodes
-
-All other device nodes except the Google device are deprecated. Please use the Google device node instead.
-
 #### - Management
 `topic` can be `restart_server`, `report_state` or `request_sync`.
 
@@ -194,6 +192,12 @@ All other device nodes except the Google device are deprecated. Please use the G
 
 ---
 ## The config node
+
+  `Name`: A name for your config node.
+
+  `Enable Node Debug`: If enabbled, debug messages will be written to Node-RED's log output.
+
+  `Default Language`: The language of your project.
 
 **Local Authentication**
 
@@ -213,17 +217,18 @@ All other device nodes except the Google device are deprecated. Please use the G
 
 **Google HomeGraph Settings**
 
-  `Jwt Key`: Full or relative to the Node-RED config folder path to JWT key file (the one downloaded in the *Add Report State* section).
+  `Jwt Key`: Path to the JSON file you downloaded during setup. Can be an absolute path or a path relative to Node-REDs
+             user dir (where your settings.js, flows.json etc. are stored). 
 
 **Web Server Settings**
 
-  `Use http Node-RED root path`: If enabled, use the same http root path prefix configured for Node-RED, otherwise use /.
+  `Port`: TCP port of your choosing for incoming connections from Google. Must match what you entered in the
+          *Actions on Google* project. If empty, it will use the same port as Node-RED.
 
   `Path`: Prefix for URLs provided by this module. Default fulfillment URL is https://example.com:3001/smarthome. With a
           path of "foo" this changes to https://example.com:3001/foo/smarthome. Same for URLs `/oauth` and `/token`.
 
-  `Port`: TCP port of your choosing for incoming connections from Google. Must match what you entered in the
-          *Actions on Google* project. If empty, it will use the same port as Node-RED.
+  `Use http Node-RED root path`: If enabled, use the same http root path prefix configured for Node-RED, otherwise use /.
 
   `Use external SSL offload`: If enabled, the smarthome service will use HTTP instead of HTTPS. Check if you want to
                               do SSL termination on a reverse proxy.
@@ -317,42 +322,13 @@ Google Workspace account. If this is the case, you can share access to your smar
 - Go to [Actions on Google Console](https://console.actions.google.com), on tab *Test* click *Reset Test*. If this
   doesn't do anything, click the *Settings* button, disable "On device testing", then click "Start testing" to enable it again. This is
   especially important after making changes in the Google Actions Console.
-- Check that you only have one single config node and this config is selected in your management node and all your
-  devices.
+- Check that you have only one single management node and one single config node.
 - Google might say that it cannot reach your device if that device did not update its state at least once after creation.
 - Go through the [setup instructions](docs/setup_instructions.md) again and compare your settings to what you see on the
   screenshots
 
+For problems related to local fulfillment have a look at [Troubleshooting local fulfillment](https://github.com/mikejac/node-red-contrib-google-smarthome/blob/master/docs/local_fulfillment.md#troubleshooting-local-fulfillment).
 
---
-## Troubleshooting Local fulfillment
-
-- You can test if local fulfillment was successfully enabled by saying "Hey Google, force local" (works on non-english
-  devices too). Then try to control your devices. All actions will now be executed locally or will fail if local
-  fulfillment is not available. After you are done testing, revert to normal mode by saying "Hey Google, force default".
-- Set a port for local fulfillment in the management node's config.
-- Send an HTTP POST request to `http://192.168.178.25:13002/smarthome` (with the IP address of your host and the
-  port you chose). E.g. run `curl -X POST http://192.168.178.25:13002/smarthome`. It should answer with
-  `{"error":"missing inputs"}`. This error message is okay, all other messages indicate connection problems with the
-  local fulfillment service.
-- Install [Service Browser](https://play.google.com/store/apps/details?id=com.druk.servicebrowser) or a similar mDNS
-  discovery tool on your phone. It must find a service named "_nodered-google._tcp.". Tap on it, then tap again on
-  "nodered" to see the details. Check if the IP address and port are correct.
-- If Service Browser lists the "nodered" service with an additional domain, check the configuration files /etc/hostname
-  and /etc/hosts. Both files must contain the hostname without a domain.
-- Open [chrome://inspect](chrome://inspect) in Chrome on your computer (not available on phone). Let it run for a while
-  until your smart speaker is discovered. Click the `inspect` link. You'll see the console output of your smart speaker.
-  The first two lines should read "Ready, App version: x.y" and "node-red-contrib-google-smarthome app.js ready!". If
-  the local fulfillment connection was successfully established, you should see lines starting with "IDENTIFY" and
-  "REACHABLE_DEVICES" as well as lots of other lines. Yellow warning lines are okay, but you should not see red error
-  lines.
-- The first lines in  the chrome://inspect console will show the version number of the app.js script. Compare the
-  version number to the one on the third line of the official
-  [app.js script](https://raw.githubusercontent.com/mikejac/node-red-contrib-google-smarthome/master/local-execution/app.js).
-  If they are different, update the app.js script as explained
-  in the [setup instructions](docs/setup_instructions.md#enable-local-fulfillment-optional). After updating app.js, you
-  might have to restart your smart speaker.
-- Sometimes it takes several hours for the local fulfillment connection to be established.
 
 ---
 
@@ -360,4 +336,4 @@ Google Workspace account. If this is the case, you can share access to your smar
 Parts of this README and large parts of the code comes from Google. [Actions on Google: Smart Home sample using Node.js](https://github.com/actions-on-google/smart-home-nodejs) in particular has been of great value.
 
 ## Copyright and license
-Copyright 2018 - 2021 Michael Jacobsen under [the GNU General Public License version 3](LICENSE).
+Copyright 2018 - 2023 Michael Jacobsen and others under [the GNU General Public License version 3](LICENSE).
