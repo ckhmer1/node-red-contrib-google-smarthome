@@ -29,6 +29,10 @@
         }
     </style>
 
+    <div class="form-tips" style="margin-bottom: 1em">
+        For setup instructions, <a href="https://github.com/mikejac/node-red-contrib-google-smarthome/blob/master/docs/setup_instructions.md" target="_blank">look here </a>.
+    </div>
+
     <div class="form-row">
         <b>Google SmartHome Settings</b>
     </div>
@@ -3249,7 +3253,7 @@
                         required_traits = ["appselector", "mediastate", "transportcontrol", "volume"];
                         break;
                     case "SWITCH": // Switch
-                        recommended_traits = ["brightmmess"];
+                        recommended_traits = ["brightness"];
                         required_traits = ["onoff"];
                         break;
                     case "THERMOSTAT": // Thermostat

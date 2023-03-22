@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-google-smarthome",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Lets you control Node-Red via Google Assistant or the Google Home App",
   "main": "google-smarthome.js",
   "scripts": {
@@ -43,7 +43,7 @@
     "morgan": "^1.10.x",
     "cors": "^2.8.x",
     "google-auth-library": "^8.7.0",
-    "googleapis": "^110.0.x",
+    "googleapis": "^112.0.x",
     "uid-generator": "^2.0.x",
     "ip-range-check": "^0.2.x",
     "@gravitysoftware/dnssd": "^0.5.x"

@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 module.exports = function (RED) {
     "use strict";
@@ -2054,14 +2054,19 @@ module.exports = function (RED) {
             me.send(msg);
         }
 
-        /******************************************************************************************************************
+        /**
          * respond to inputs from NodeRED
          *
+         * @param {object} msgi - The incoming message
+         * @param {Function} send - Function to send outgoing messages
+         * @param {Function} done - Function to inform the runtime that this node has finished its operation
          */
-        onInput(msgi) {
+        onInput(msgi, send, done) {
             const me = this;
+            if(!send) send = function() { me.send.apply(me, arguments) };
             let msg = msgi;
             if (me.topic_filter && !(msg.topic || '').toString().startsWith(me.topicOut)) {
+                if(done) done();
                 return;
             }
             me._debug(".input: topic = " + msg.topic);
@@ -2077,7 +2082,7 @@ module.exports = function (RED) {
                 if (upper_topic === 'GETSTATE') {
                     let states = {};
                     me.cloneObject(states, me.states, me.state_types);
-                    me.send({
+                    send({
                         topic: msg.topic,
                         payload: states,
                         device_id: me.device.id
@@ -2642,10 +2647,10 @@ module.exports = function (RED) {
                     const differs = me.updateState(msg.payload || {});
 
                     if (differs) {
-                        if (msgi.stateOutput || false) {
+                        if (msgi.stateOutput) {
                             let states = {};
                             me.cloneObject(states, me.states, me.state_types);
-                            me.send({ topic: me.topicOut, payload: states });
+                            send({ topic: me.topicOut, payload: states });
                         }
                         me.clientConn.reportState(me.id);  // tell Google ...
                         if (me.persistent_state) {
@@ -2654,15 +2659,25 @@ module.exports = function (RED) {
                         me.updateStatusIcon(false);
                     }
                     if (me.passthru) {
-                        me.send(msgi);
+                        send(msgi);
                     }
+
+                    if(done) done();
                 }
             } catch (err) {
-                me._debug(".onInput error " + JSON.stringify(err));
-                me.error(err);
+                if(done)
+                    done(err);
+                else
+                    me.error(err);
             }
         }
 
+        /**
+         * Called by the runtime when this node is being removed or restarted
+         *
+         * @param {boolean} removed - true if the is being removed, false on restart
+         * @param {Function} done - Function to inform the runtime that this node has finished its operation
+         */
         onClose(removed, done) {
             if (removed) {
                 // this node has been deleted
@@ -3221,12 +3236,9 @@ module.exports = function (RED) {
 
         to_available_modes(json_data) {
             let me = this;
-            let key_name_synonym = function (type, json_data, key1, key2, key3, manage_other_fields) {
-                return me.key_name_synonym(type, json_data, key1, key2, key3, manage_other_fields);
-            }
             let f = function (data_in, data_out) {
                 if (Array.isArray(data_in.settings)) {
-                    data_out.settings = key_name_synonym("Modes settings", data_in.settings, 'setting_name', 'setting_values', 'setting_synonym');
+                    data_out.settings = me.key_name_synonym("Modes settings", data_in.settings, 'setting_name', 'setting_values', 'setting_synonym');
                     if (typeof data_in.ordered === 'boolean') {
                         data_out.ordered = data_in.ordered;
                     }
@@ -3288,7 +3300,7 @@ module.exports = function (RED) {
                             }
                         }
                     }
-                    if (typeof rec[key1] == undefined && typeof rec[key2] !== undefined && Array.isArray(rec[key2])) {
+                    if (typeof rec[key1] === 'undefined' && typeof rec[key2] !== 'undefined' && Array.isArray(rec[key2])) {
                         let val2 = rec[key2];
                         if (typeof val2 === 'string') {
                             val2 = [val2];

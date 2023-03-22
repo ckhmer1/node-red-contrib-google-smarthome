@@ -22,7 +22,7 @@
  * https://github.com/actions-on-google/smart-home-nodejs
  * 
  * https://developers.google.com/assistant/smarthome/
-*/
+ */
 
 const https = require('https');
 
@@ -244,6 +244,7 @@ module.exports = function (RED) {
             RED.nodes.createNode(this, config);
 
             this.client = config.client;
+            /** @type {GoogleSmartHomeNode} */
             this.clientConn = RED.nodes.getNode(this.client);
 
             if (!this.clientConn) {
@@ -256,7 +257,6 @@ module.exports = function (RED) {
                 return;
             }
 
-            let node = this;
             this.enabledebug = config.enabledebug || false;
             this.set_state_type = config.set_state_type || 'filtered_by_id';
 
@@ -265,18 +265,7 @@ module.exports = function (RED) {
             this.status({ fill: "yellow", shape: "dot", text: "Ready" });
 
             this.on('input', this.onInput);
-
-            this.on('close', function (removed, done) {
-                if (removed) {
-                    // this node has been deleted
-                    node.clientConn.remove(node, 'mgmt');
-                } else {
-                    // this node is being restarted
-                    node.clientConn.deregister(node, 'mgmt');
-                }
-
-                done();
-            });
+            this.on('close', this.onClose);
         }
 
         _debug(msg) {
@@ -303,11 +292,14 @@ module.exports = function (RED) {
             node.send(msg);
         }
 
-        /******************************************************************************************************************
+        /**
          * respond to inputs from NodeRED
          *
+         * @param {object} msg - The incoming message
+         * @param {Function} send - Function to send outgoing messages
+         * @param {Function} done - Function to inform the runtime that this node has finished its operation
          */
-        onInput(msg) {
+        onInput(msg, send, done) {
             const node = this;
             node._debug("MgmtNode(input)");
 
@@ -355,7 +347,7 @@ module.exports = function (RED) {
                     }
                     let states = this.clientConn.app.devices.getStates(deviceIds, onlyPersistent, useNames);
                     if (states) {
-                        this.send({
+                        send({
                             topic: topic,
                             payload: states
                         });
@@ -365,10 +357,29 @@ module.exports = function (RED) {
                         this.clientConn.app.devices.setStates(msg.payload);
                     }
                 }
+
+                done();
             } catch (err) {
-                node._debug("MgmtNode(input): error " + JSON.stringify(err));
-                RED.log.error(err);
+                done(err);
             }
+        }
+
+        /**
+         * Called by the runtime when this node is being removed or restarted
+         *
+         * @param {boolean} removed - true if the is being removed, false on restart
+         * @param {Function} done - Function to inform the runtime that this node has finished its operation
+         */
+        onClose(removed, done) {
+            if (removed) {
+                // this node has been deleted
+                this.clientConn.remove(this, 'mgmt');
+            } else {
+                // this node is being restarted
+                this.clientConn.deregister(this, 'mgmt');
+            }
+
+            done();
         }
 
         sendSetState() {
