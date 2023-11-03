@@ -6,7 +6,7 @@
   point to your host.
 - You need a 'real' SSL certificate, e.g. from [Let's Encrypt](https://letsencrypt.org/). You must have either the
   certificate files  (e.g. from Certbot). Or you can use a reverse proxy with automatic certificate management, such as
-  Caddy or Traefik. Tip: There's a guide on [how to use Caddy]((docs/caddy.md).
+  Caddy or Nginx Proxy Manager. There's a guide on [how to use a reverse proxy](docs/reverse_proxies.md).
 - You need to be able to forward incoming traffic from the internet to a specific port on your host. This may be
   difficult if your ISP uses carrier-grade NAT, or if you can't configure port forwarding on your router.
 - This package requires at least NodeJS 10.0.0.
@@ -74,7 +74,33 @@ First we will register a new Smart Home project in the Actions Console.
     <kbd>![](images/setup_instructions/actionsconsole_tab_accountlinking_save.png)</kbd>
 
 
-13. You don't need to fill in anything on the other tabs.
+12. Switch to the *Deploy* tab and select *Directory Information* from the sidebar.\
+    <kbd>![](images/setup_instructions/actionsconsole_directoryinformation.png)</kbd>
+
+
+13. Fill in the form. It doesn't matter what you enter, these information will not be shown anywhere, but Google
+    requires this form to be filled out. As small logo I used https://nodered.org/about/resources/media/node-red-icon.png,
+    as large image I used an image from https://placekitten.com/1920/1080. The full form looks similar to this:\
+    <kbd>![](images/setup_instructions/actionsconsole_directoryinformation_form.png)</kbd>
+
+
+12. Click *Save*.\
+    <kbd>![](images/setup_instructions/actionsconsole_directoryinformation_save.png)</kbd>
+
+
+13. While still on the *Deploy* tab, select *Company details*.
+    <kbd>![](images/setup_instructions/actionsconsole_companydetails.png)</kbd>
+
+
+14. Same as before, fill in the form as you want.
+    <kbd>![](images/setup_instructions/actionsconsole_companydetails_form.png)</kbd>
+
+
+15. Click *Save*.
+    <kbd>![](images/setup_instructions/actionsconsole_companydetails_save.png)</kbd>
+
+
+16. You don't need to fill in anything on the other tabs.
 
 
 **Note:** You can't test your project in the Action Console's simulator. It only works on real devices.
@@ -172,7 +198,13 @@ Now we will install and configure the module in Node-RED.
       path set in the Path field, the service will use https://example.com:3001/<httpNodeRoot>/<yourpath>/smarthome.
       This tutorial assumes a simple path setup, so leave it empty.
     * Use external SSL offload: If enabled, the smarthome service will use HTTP instead of HTTPS. This allows you to use
-      a reverse proxy such as Caddy or Traefik to manage SSL certificates.
+      a reverse proxy such as Caddy or Nginx Proxy Manager to manage SSL certificates. Also see our
+      [guide on reverse proxies](docs/reverse_proxies.md).
+    * Public key: Path to the SSL certificate file, e.g. `fullchain.pem` from Let's Encrypt.
+    * Private Key: Path to private SSL key file, e.g. `privkey.pem` from Let's Encrypt.
+        * Don't set if you use SSL offloading.
+        * Paths can be absolute or relative to Node-RED's user dir.
+        * Certificates are automatically reloaded after renewal. You don't need to restart Node-RED.
     * Scan Type: Specifies how your smart speaker will search for Node-RED instances on your local network to use for
       local fulfillment. You can set up local fulfillment later, so set it to "Disabled" for now.
     * Access Token Duration, Report Interval, Request sync delay, set_state message delay: Usually you don't need to
@@ -228,9 +260,98 @@ Finally, we will link the Google Home App to the Node-RED service.
 
 9. Congratulations! Your project has been successfully set up. You are now ready to add devices.
 
+
+## Basic usage
+
+1. Place the device node from the "Google Smart Home" section on a flow.\
+   <kbd>![](images/setup_instructions/basicusage_devicenode.png)</kbd>
+
+
+2. Open the configuration of your device. Give it a name and select a device type. Here you also configure the traits of
+   your device. Traits define the functionalities of your device. Some traits are required by the device type, but you
+   can freely add more traits. A list of all traits and detailed descriptions is available on
+   https://developers.home.google.com/cloud-to-cloud/traits?hl=en.
+   For the beginning, configure your device as a lamp with the On/Off trait.\
+   <kbd>![](images/setup_instructions/basicusage_light.png)</kbd>
+
+
+3. Connect a debug node to its output side to see what happens when you control the device.
+   <kbd>![](images/setup_instructions/basicusage_debug.png)</kbd>
+
+
+4. Deploy your flow.
+
+
+5. Say "Hey Google, turn on the light" or turn on the light in the app.
+
+
+6. You'll see the output message in the debug panel. The most interesting part is the `payload`. This contains the new
+   state of your device. The `on` parameter will now be `true`.\
+   <kbd>![](images/setup_instructions/basicusage_output.png)</kbd>
+
+
+7. To connect the Google device node to your actual device, you usually need to convert the payload to what your device
+   expects. You could use a `change` or `function` node to do this.
+   Let's say I have a Tasmota device (using node-red-contrib-tasmota). Tasmota expects `msg.payload` to be a single
+   boolean value, but the Google device outputs `msg.payload` as an object. So I used a function node to do the
+   conversion.\
+   <kbd>![](images/setup_instructions/basicusage_to_tasmota.png)</kbd>\
+   I hid the label of the function node on the "Appereance" tab to make it shorter. The function node uses this code:
+   ```javascript
+   return {
+       payload: msg.payload.on
+   };
+   ```
+
+
+8. If you just want to control your device, you are done now. If you want to get the current state of your device in the
+   app or using Google Assistant ("Hey Google, is the light on?"), you need to send the current state of your device
+   to the Google device. This usually means taking the output of your actual device, converting it using a
+   `change` or `function` node and then passing it to the Google device.\
+
+   You can inject values in one of two ways. You can either set the state name as `topic` and the value as `payload`:
+   ```json
+   {
+       "topic": "on",
+       "payload": true
+   }
+   ```
+   
+   Or you can send an object with the state name as key and the state value as value:
+
+   ```json
+   {
+       "on": true
+   }
+   ```
+
+   To get the state names (like `on`, `brightness` etc.) and their descriptions, you can have a look on the official
+   trait list at https://developers.home.google.com/cloud-to-cloud/traits?hl=en. The states are listed under each trait
+   in the section "Device States". Or you can control your device and use the state names you get from the output
+   messages.
+
+   A Tasmota lamp with fully connected inputs and outputs would look like this:\
+   <kbd>![](images/setup_instructions/basicusage_complete.png)</kbd>
+   
+   The code for the (upper) function node is:
+   ```javascript
+   return {
+       "payload": {
+           "on": msg.payload
+       }
+   };
+   ```
+
 ---
 
 ## Further information
 
 - You can enable [local fulfillment](local_fulfillment.md) for faster response times.
 - You can [switch to Google Sign-In](google_signin.md) to make logging in a bit easier.
+
+
+## Troubleshooting
+
+- If you encounter any problems, please refer to the [Troubleshooting section](README.md#troubleshooting) in the Readme.
+- If you have questions, ask them on our [Discussions page](https://github.com/mikejac/node-red-contrib-google-smarthome/discussions).
+- If you think you have found a bug, report it on our [Issue Tracker](https://github.com/mikejac/node-red-contrib-google-smarthome/issues).

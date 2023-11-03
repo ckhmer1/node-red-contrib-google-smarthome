@@ -5,13 +5,13 @@
 - [Nodes in this package](#nodes-in-this-package)
   - [General Information](#general-information)
   - [Google Device node](#--google-device-node)
-  - [Other device nodes](#other-device-nodes)
   - [Management](#--management)
 - [The config node](#the-config-node)
 - [Sending spoken notifications](#sending-spoken-notifications)
 - [Inviting other users](#inviting-other-users)
 - [Troubleshooting](#troubleshooting)
-- [Troubleshooting local fulfillment](#troubleshooting-local-fulfillment)
+- [Contact us](#contact-us)
+- [Developer resources](#developer-resources)
 - [Credits](#credits)
 - [Copyright and license](#copyright-and-license)
 
@@ -24,6 +24,8 @@ This is done by implementing a smart home provider that runs on your own host. S
 party services (other than Google) that can go offline, charge you, or leak your data.
 
 What this module does NOT do:
+- It is not a cloud-hosted solution that you just install and it works. You host a publicly accessible service on your
+  own hardware. It can be difficult to set up. And you do this at your own risk.
 - It does not talk to your physical devices. It only provides virtual devices in Node-RED. It's up to you to pass
   commands from the virtual to the physical devices.
 - It is not an interface to Google devices (like Nest Thermostats, Nest Cams, etc.).
@@ -36,7 +38,7 @@ What this module does NOT do:
   point to your host.
 - You need a 'real' SSL certificate, e.g. from [Let's Encrypt](https://letsencrypt.org/). You must have either the
   certificate files  (e.g. from Certbot). Or you can use a reverse proxy with automatic certificate management, such as
-  Caddy or Traefik. Tip: There's a guide on [how to use Caddy]((docs/caddy.md).
+  Caddy or Nginx Proxy Manager. There's a guide on [how to use a reverse proxy](docs/reverse_proxies.md).
 - You need to be able to forward incoming traffic from the internet to a specific port on your host. This may be
   difficult if your ISP uses carrier-grade NAT, or if you can't configure port forwarding on your router.
 - This package requires at least NodeJS 10.0.0.
@@ -57,7 +59,7 @@ Follow our [setup instructions](docs/setup_instructions.md).
   for the part after the last `/`, if any.
 
 
-#### - Google device node
+### Google device node
 This is a generic node that supports the following Google [devices](https://developers.google.com/assistant/smarthome/guides):
 
 * Air conditioning unit
@@ -184,13 +186,12 @@ and the following Google [traits](https://developers.google.com/assistant/smarth
 Example flow:
         See the flow used for the automated tests [here](test/sh/flows.json)
 
-#### - Management
+### Management
 `topic` can be `restart_server`, `report_state` or `request_sync`.
 
 `payload` is not used for anything.
 
-`restart_server` is used to stop and restart the built-in web server. Can be used if your SSL certificate has been
-renewed and needs to be re-read by the web server.
+`restart_server` restarts the built-in web server.
 
 `report_state` will force an update of all states to Google. Mostly useful for debugging.
 
@@ -243,6 +244,8 @@ renewed and needs to be re-read by the web server.
   `Public Key`: Full path to the SSL certificate file, e.g. `fullchain.pem` from Let's Encrypt.
 
   `Private Key`: Full path to private SSL key file, e.g. `privkey.pem` from Let's Encrypt.
+
+    Note: Certificates are automatically reloaded after renewal. You don't need to restart Node-RED.
 
 **Local Fulfillment**
 
@@ -339,6 +342,28 @@ commercial Google Workspace account. If this is the case, you can share access t
 
 For problems related to local fulfillment, see [Troubleshooting local fulfillment](docs/local_fulfillment.md#troubleshooting-local-fulfillment).
 
+---
+
+## Contact us
+
+- If you have questions, ask them on our [Discussions page](https://github.com/mikejac/node-red-contrib-google-smarthome/discussions).
+- If you think you have found a bug, report it on our [Issue Tracker](https://github.com/mikejac/node-red-contrib-google-smarthome/issues).
+
+---
+
+## Developer resources
+
+- [Google Smart Home project](https://developers.home.google.com/cloud-to-cloud/get-started)
+- [Google Smart Home traits list](https://developers.home.google.com/cloud-to-cloud/traits)
+- [Actions on Google Console](https://console.actions.google.com/project/wohnung-45a57/overview)
+- [Google's Smart Home sample project](https://github.com/actions-on-google/smart-home-nodejs)
+- [SYNC Data Validator](https://developers.home.google.com/cloud-to-cloud/tools/sync-data-validator)
+- [Google Home Playground](https://home-playground.withgoogle.com/)
+- Similar projects:
+  - [SmartNORA](https://github.com/andrei-tatar/node-red-contrib-smartnora) (cloud-hosted Google integration for Node-RED)
+  - [Nabu Casa](https://github.com/NabuCasa/hass-nabucasa) (Google integration for Home Assistant)
+  - [node-red-contrib-googlehome](https://googlehome.hardill.me.uk/) (Google integration for Node-RED by Ben Hardill)
+  - [Node-RED Smart Home Control](https://red.cb-net.co.uk/) (Google integration for Node-RED, based on node-red-contrib-googlehome)
 
 ---
 
