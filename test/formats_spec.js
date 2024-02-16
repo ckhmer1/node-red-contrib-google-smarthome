@@ -1,6 +1,6 @@
 /**
- * NodeRED Google SmartHome
- * Copyright (C) 2023 Claudio Chimera and others.
+ * node-red-contrib-google-smarthome
+ * Copyright (C) 2024 Claudio Chimera and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,6 +107,8 @@ describe('Format Conversion', function () {
         '10',
         10.5,
         '10.5',
+        '0x00000A',
+        '#00000A',
     ];
     testConvertsToValue(convertToInt10, formats.INT, 10, 'int 10');
 

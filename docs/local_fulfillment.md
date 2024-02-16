@@ -8,13 +8,28 @@ This tutorial assumes that your service is already set up and working.
 
 ---
 
+## Using local fulfillment with Docker containers
+
+If you are running Node-RED inside a Docker container, you must use UDP as mDNS will not work with containers.
+
+In your container configuration, you must explicitly forward the listen and broadcast ports for TCP and UDP. For
+example, if you want to use port 8882, the port configuration in your `docker-compose.yaml` would have to look like
+this:
+
+```yaml
+ports:
+    - "8882:8882/tcp" # TCP port for local execution
+    - "8882:8882/udp" # UDP port for local execution
+    # ... other ports for Node-RED and the smarthome service
+```
+
 ## Enable Local Fulfillment
 
 1. Open the configuration of your management node in Node-RED.
 
 
 2. Scroll down to the section `Local Fulfillment`. Fill in as follows:
-    * Scan Type: Select either MDNS or UDP scanning. Which one works better depends on your network configuration. You
+    * Scan Type: Select either mDNS or UDP scanning. Which one works better depends on your network configuration. You
       may need to try both.
     * Discovery port: Node-RED will listen on this port for discovery messages from your smart speaker. Enter any port
       that you want. Don't create an external port forwarding for this port on your home router.
@@ -51,33 +66,33 @@ This tutorial assumes that your service is already set up and working.
 9. Click the button `+ New scan config` if you don't have a scan configuration yet.
 
 
-10. Select MDNS or UDP depending on what you selected in the configuration of your management node.
+10. Select mDNS or UDP depending on what you selected in the configuration of your management node.
 
 
-11. For MDNS, fill in the fields as follows.<br>
-    MDNS service name: Set to `_nodered-google._tcp.local`.
+11. For mDNS, fill in the fields as follows.<br>
+    mDNS service name: Set to `_nodered-google._tcp.local`.
     <br><br>
     For UDP, fill in the fields as follows,<br>
-    Broadcast address: The IP range of your local network, e.g. `192.168.178.255`.
-    Discovery packet: Set to `6e6f64652d7265642d636f6e747269622d676f6f676c652d736d617274686f6d65`.
-    Listen port: Set the same port you set as "Discovery Port" in the configuration of your management node.
-    Broadcast port: Set the same port you set as "Discovery Port" in the configuration of your management node.
+    * Broadcast address: The IP range of your local network, e.g. `192.168.178.255`.
+    * Discovery packet: Set to `6e6f64652d7265642d636f6e747269622d676f6f676c652d736d617274686f6d65`.
+    * Listen port: Set the same port you set as "Discovery Port" in the configuration of your management node.
+    * Broadcast port: Set the same port you set as "Discovery Port" in the configuration of your management node.
 
 
-13. The complete form for the mDNS scan type should look like this.\
+12. The complete form for the mDNS scan type should look like this.\
     <kbd>![](images/local_fulfillment/localexecution_form_mDNS.png)</kbd>
 
     The complete form for the UDP scan type should look like this.\
     <kbd>![](images/local_fulfillment/localexecution_form_UDP.png)</kbd>
 
 
-14. `Save` your changes.
+13. `Save` your changes.
 
 
-15. Restart your smart speaker and Node-RED.
+14. Restart your smart speaker and Node-RED.
 
 
-16. Now control your device. If local fulfillment is working, you will see a ring icon instead of the usual filled
+15. Now control your device. If local fulfillment is working, you will see a ring icon instead of the usual filled
     circle.\
     <kbd>![](images/local_fulfillment/localexecution_ring.png)</kbd>
     
@@ -130,7 +145,7 @@ speaker. You'll get a warning on Node-RED's debug panel if this is needed.
   port you chose). E.g. run `curl -X POST http://192.168.178.25:13002/smarthome`. It should answer with
   `{"error":"missing inputs"}`. This error message is okay, all other messages indicate connection problems with the
   local fulfillment service.
-- Install [Service Browser](https://play.google.com/store/apps/details?id=com.druk.servicebrowser) or a similar mDNS
+- If you selected mDNS, install [Service Browser](https://play.google.com/store/apps/details?id=com.druk.servicebrowser) or a similar mDNS
   discovery tool on your phone. It must find a service named "_nodered-google._tcp.". Tap on it, then tap again on
   "nodered" to see the details. Check if the IP address and port are correct.
 - If Service Browser lists the "nodered" service with an additional domain, check the configuration files /etc/hostname

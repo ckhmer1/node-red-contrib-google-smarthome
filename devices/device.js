@@ -1,6 +1,6 @@
 /**
- * NodeRED Google SmartHome
- * Copyright (C) 2023 Claudio Chimera and others.
+ * node-red-contrib-google-smarthome
+ * Copyright (C) 2024 Claudio Chimera and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -722,7 +722,7 @@ module.exports = function (RED) {
             const nicknames = this.nicknames ? [this.name].concat(this.nicknames.split(',')) : [];
 
             this.states = {
-                online: true
+                online: config.online != false
             };
             this.device = {
                 id: this.id,
@@ -4638,7 +4638,7 @@ module.exports = function (RED) {
                     this.current_channel_index = 0;
                 }
                 params['currentChannel'] = this.available_channels[this.current_channel_index].key;
-                params['currentChannelNumber'] = this.available_channels[current_channel_index].number || '';
+                params['currentChannelNumber'] = this.available_channels[this.current_channel_index].number || '';
                 // executionStates.push('currentChannel');
             }
 

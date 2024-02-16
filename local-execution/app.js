@@ -1,6 +1,6 @@
 "use strict";
 
-const VERSION = '2.7';
+const VERSION = '2.8';
 
 /// <reference types="@google/local-home-sdk" />
 /*
@@ -19,7 +19,7 @@ const hex2a = (hexx) => {
     var hex = hexx.toString();
     var str = '';
     for (var i = 0; i < hex.length; i += 2)
-        str += String.fromCharCode(parseInt(hex.substring(i, 2), 16));
+        str += String.fromCharCode(parseInt(hex.substring(i, i+2), 16));
     return str;
 }
 

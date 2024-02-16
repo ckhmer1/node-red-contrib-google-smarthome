@@ -1,7 +1,6 @@
 ## Table of Contents
 - [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
-- [Setup Instructions](#setup-instructions)
+- [Setup Instructions](#prerequisites-and-setup-instructions)
 - [Nodes in this package](#nodes-in-this-package)
   - [General Information](#general-information)
   - [Google Device node](#--google-device-node)
@@ -32,19 +31,7 @@ What this module does NOT do:
 - It is for controlling devices only. It does not let you implement your own conversations with Google Assistant.
 
 ---
-## Prerequisites
-
-- You need your own domain. You can use a free domain from any DynDNS provider. The DNS record for this domain must
-  point to your host.
-- You need a 'real' SSL certificate, e.g. from [Let's Encrypt](https://letsencrypt.org/). You must have either the
-  certificate files  (e.g. from Certbot). Or you can use a reverse proxy with automatic certificate management, such as
-  Caddy or Nginx Proxy Manager. There's a guide on [how to use a reverse proxy](docs/reverse_proxies.md).
-- You need to be able to forward incoming traffic from the internet to a specific port on your host. This may be
-  difficult if your ISP uses carrier-grade NAT, or if you can't configure port forwarding on your router.
-- This package requires at least NodeJS 10.0.0.
-
----
-## Setup Instructions
+## Prerequisites and Setup Instructions
 
 Follow our [setup instructions](docs/setup_instructions.md).
 
@@ -251,7 +238,7 @@ Example flow:
 
   `Scan Type`: The service discovery method to use. Must match what is set in the *Actions on Google* project.
 
-  `Discovery Port`: A port number to use for UDP or MDNS service discovery. 
+  `Discovery Port`: A port number to use for UDP or mDNS service discovery. 
 
   `HTTP Port`: A port number to use for the connection from your smart speaker to Node-RED. If empty, it will use the
                same port as Node-RED. If you are using Node-RED's built-in HTTPS encryption or have a httpAdminRoot set,
@@ -373,4 +360,4 @@ Parts of this README and much of the code come from Google. In particular,
 great value.
 
 ## Copyright and license
-Copyright 2018 - 2023 Michael Jacobsen and others under [the GNU General Public License version 3](LICENSE).
+Copyright 2018 - 2024 Michael Jacobsen and others under [the GNU General Public License version 3](LICENSE).

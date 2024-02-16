@@ -2,19 +2,34 @@
 
 ## Prerequisites
 
-- You need your own domain. You can use a free domain from any DynDNS provider. The DNS record for this domain must
-  point to your host.
-- You need a 'real' SSL certificate, e.g. from [Let's Encrypt](https://letsencrypt.org/). You must have either the
-  certificate files  (e.g. from Certbot). Or you can use a reverse proxy with automatic certificate management, such as
-  Caddy or Nginx Proxy Manager. There's a guide on [how to use a reverse proxy](docs/reverse_proxies.md).
 - You need to be able to forward incoming traffic from the internet to a specific port on your host. This may be
-  difficult if your ISP uses carrier-grade NAT, or if you can't configure port forwarding on your router.
+  difficult if your ISP uses carrier-grade NAT, if you are on a shared network (e.g. in dormitories) or if you can't
+  configure port forwarding on your router. In this case you can use a service like [Cloudflare Tunnel](https://www.cloudflare.com/products/tunnel/).
 - This package requires at least NodeJS 10.0.0.
 
-This tutorial assumes your domain is `example.com` and you want to use port `3001`. Replace domain and port in the
-instructions accordingly.
-
 ---
+
+## Register a domain
+
+You need your own domain. This can be a paid domain or a free subdomain from a DynDNS provider. The A record of your
+domain must point to your public IP address.
+
+If your IP address changes regularly, make sure your domain's DNS record is updated on each change. This usually means
+installing an update client for your domain. Some routers also support DynDNS updates. Most DynDNS providers have
+instructions on how to do this.
+
+This tutorial assumes that your domain is `example.com`. Replace the domain accordingly.
+
+
+## Get an SSL certificate
+
+Google requires an SSL encrypted connection to your server. This requires a valid SSL certificate. Self-signed
+certificates won't work.
+
+You can use a free certificate from Let's Encrypt or ZeroSSL. For this, you can either use a certificate client
+(see [this guide for acme.sh](ssl_certificate.md)) or you can use a reverse proxy with built-in certificate management
+(see [this guide on how to use Caddy](reverse_proxies.md])).
+
 
 ## Create project in Actions Console
 
