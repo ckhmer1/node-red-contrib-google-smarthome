@@ -1872,6 +1872,11 @@ module.exports = function (RED) {
             }
         }
 
+        /**
+         * Updates the status icon of this device node.
+         *
+         * @param {boolean} is_local - Indicates whether the current command was issued using local fulfillment.
+         */
         updateStatusIcon(is_local) {
             const me = this;
             let text = '';
@@ -2052,13 +2057,6 @@ module.exports = function (RED) {
                     }
                 });
             }
-
-            // Copy the command original params to the payload
-            /*Object.keys(original_params).forEach(function (key) {
-                if (!Object.prototype.hasOwnProperty.call(msg.payload, key)) {
-                   msg.payload[key] = original_params[key];
-                }
-            });*/
 
             me.send(msg);
         }
@@ -2852,26 +2850,24 @@ module.exports = function (RED) {
             return traits;
         }
 
-        //
-        //
-        //
-        //
+        /**
+         * Updates the states of this device with new values.
+         *
+         * @param {Object} from_states - The new states values.
+         * @returns {Array} - Array of the state keys that were modified.
+         */
         updateState(from_states) {
             const me = this;
             let modified = [];
-            // me._debug("CCHI updateState state_types " + JSON.stringify(me.state_types));
             me._debug('updateState current state ' + JSON.stringify(me.states));
             Object.keys(me.state_types).forEach(key => {
                 if (Object.prototype.hasOwnProperty.call(from_states, key)) {
-                    // console.log("CCHI found key " + key);
                     let o_modified = me.setState(key, from_states[key], me.states, me.state_types[key]);
                     if (o_modified) {
                         me._debug('.updateState set "' + key + '" to ' + JSON.stringify(from_states[key]));
                         modified.push(o_modified);
                     }
-                    // console.log("CCHI set " + key + " val " + JSON.stringify(current_state[key]));
                 }
-                // else console.log("CCHI NOT found key " + key);
             });
             let thermostat_modified = false;
             if (modified.includes("thermostatTemperatureSetpoint")) {
@@ -2948,8 +2944,6 @@ module.exports = function (RED) {
                 };
             }
             const exclusive_states = state_type.exclusiveStates || [];
-            // console.log("CCHI ---> setState key " + JSON.stringify(key) + " v " + JSON.stringify(value) + " ov " + JSON.stringify(old_state) + " st " + JSON.stringify(state_type) + " ex " + JSON.stringify(exclusive_states));
-
             if (value == null) {
                 if (state_type.type & Formats.MANDATORY) {
                     me.error("key " + key + " is mandatory.");
@@ -3099,7 +3093,6 @@ module.exports = function (RED) {
                         }
                     });
                     mandatory_to_delete.forEach(ikey => {
-                        // console.log("CCHI try removing " + ikey);
                         let exclusive_state_found = false;
                         exclusive_states.forEach(e_state => {
                             if (typeof state[e_state] !== 'undefined') {
@@ -3134,7 +3127,6 @@ module.exports = function (RED) {
                 }
             } else {
                 new_state = Formats.formatValue(key, value, state_type.type & Formats.PRIMITIVE, state_type.defaultValue);
-                // console.log("CCHI checking new_state " + key + " " + new_state + " type " + JSON.stringify(state_type));
                 if (state_type.min !== undefined && new_state < state_type.min) {
                     me.error('key "' + key + '" must be greather or equal than ' + state_type.min);
                     new_state = undefined;
@@ -3153,7 +3145,6 @@ module.exports = function (RED) {
                 }
             }
             if (new_state !== undefined && !(state_type.type & (Formats.OBJECT | Formats.ARRAY))) {
-                // console.log("CCHI Update state for " + key + " to " + new_state);
                 if (old_state !== new_state) {
                     differs = key;
                 }
@@ -3162,7 +3153,6 @@ module.exports = function (RED) {
             if (new_state !== undefined && exclusive_states.length > 0) {
                 exclusive_states.forEach(rkey => delete state[rkey]);
             }
-            // console.log("CCHI END ----> " + key + " = " + JSON.stringify(state[key]));
             if (Array.isArray(differs)) {
                 let o_differs = {};
                 o_differs[key] = differs;
