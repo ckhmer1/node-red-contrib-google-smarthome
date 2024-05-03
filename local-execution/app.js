@@ -8,11 +8,12 @@ BASED ON: https://github.com/home-assistant/home-assistant.io/blob/current/sourc
 Modified for use with Node Red
 For license information please check the repository.
 */
+
+/* global smarthome */
+
 var App = smarthome.App;
 var Constants = smarthome.Constants;
 var DataFlow = smarthome.DataFlow;
-var Execute = smarthome.Execute;
-var Intents = smarthome.Intents; 
 var IntentFlow = smarthome.IntentFlow;
 
 const hex2a = (hexx) => {
@@ -184,7 +185,7 @@ const executeHandler = async (request) => {
 
 const queryHandler = async (request) => {
     console.log("QUERY intent:", request);
-	const device = request.inputs[0].payload.devices[0];
+    const device = request.inputs[0].payload.devices[0];
     try {
         return forwardRequest(device.customData, device.id, request);
     }
