@@ -12,7 +12,6 @@ module.exports = [
             globals: {
                 ...globals.es6,
                 ...globals.node,
-                ...globals.mocha,
                 RED: "readonly"
             },
             sourceType: "commonjs"
@@ -33,9 +32,14 @@ module.exports = [
             "jsdoc/tag-lines": ["error", "any", {
                 "startLines": 1
             }],
-            "no-constant-condition": ["error",  {
-                "checkLoops": false
-            }],
         }
+    },
+    {
+        files: ["test/**/*.js"],
+        languageOptions: {
+            globals: {
+                ...globals.mocha,
+            },
+        },
     }
 ];
