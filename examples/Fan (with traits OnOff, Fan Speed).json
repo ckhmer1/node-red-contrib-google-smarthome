@@ -1,30 +1,31 @@
 [
     {
-        "id": "43a13163.4a3e6",
+        "id": "fa83f8ae00662068",
         "type": "google-device",
-        "z": "dc2de837.a34868",
+        "z": "ba4ea2f93145cb4f",
         "client": "",
-        "name": "Front Door",
+        "name": "Example Fan",
         "nicknames": "",
         "topic": "",
-        "room_hint": "",
-        "device_type": "DOORBELL",
+        "online": true,
+        "room_hint": "Living Room",
+        "device_type": "FAN",
         "trait_appselector": false,
         "trait_channel": false,
         "trait_inputselector": false,
         "trait_mediastate": false,
-        "trait_onoff": false,
+        "trait_onoff": true,
         "trait_transportcontrol": false,
         "trait_modes": false,
         "trait_volume": false,
         "trait_toggles": false,
         "trait_brightness": false,
         "trait_colorsetting": false,
-        "appselector_file": "applications.json",
+        "appselector_file": "applications_<id>.json",
         "appselector_type": "str",
-        "channel_file": "channels.json",
+        "channel_file": "channels_<id>.json",
         "channel_type": "str",
-        "inputselector_file": "inputs.json",
+        "inputselector_file": "inputs_<id>.json",
         "inputselector_type": "str",
         "command_only_input_selector": false,
         "ordered_inputs": false,
@@ -53,10 +54,10 @@
         "color_model": "temp",
         "temperature_min_k": 2000,
         "temperature_max_k": 9000,
-        "modes_file": "modes.json",
+        "modes_file": "modes_<id>.json",
         "modes_type": "str",
         "command_query_modes": "",
-        "toggles_file": "toggles.json",
+        "toggles_file": "toggles_<id>.json",
         "toggles_type": "str",
         "command_query_toggles": "",
         "trait_camerastream": false,
@@ -75,7 +76,7 @@
         "auth_token": "",
         "topic_filter": false,
         "passthru": false,
-        "persistent_state": true,
+        "persistent_state": false,
         "trait_scene": false,
         "scene_reversible": true,
         "trait_timer": false,
@@ -94,8 +95,8 @@
             "eco",
             "dry"
         ],
-        "min_threshold_celsius": "10",
-        "max_threshold_celsius": "32",
+        "min_threshold_celsius": 0,
+        "max_threshold_celsius": 40,
         "thermostat_temperature_unit": "C",
         "buffer_range_celsius": 2,
         "command_query_temperaturesetting": "",
@@ -140,34 +141,34 @@
         "trait_statusreport": false,
         "trait_cook": false,
         "supported_cooking_modes": [],
-        "food_presets_file": "foodPresets.json",
+        "food_presets_file": "foodPresets_<id>.json",
         "food_presets_type": "str",
-        "trait_fanspeed": false,
+        "trait_fanspeed": true,
         "reversible": false,
-        "supports_fan_speed_percent": true,
+        "supports_fan_speed_percent": false,
         "fan_speeds_ordered": true,
         "command_only_fanspeed": false,
-        "available_fan_speeds_file": "availableFanSpeeds.json",
-        "available_fan_speeds_type": "str",
+        "available_fan_speeds_file": "[{\"speed_name\":\"low\",\"speed_values\":[{\"lang\":\"en\",\"speed_synonym\":[\"Low\"]}]},{\"speed_name\":\"medium\",\"speed_values\":[{\"lang\":\"en\",\"speed_synonym\":[\"Medium\"]}]},{\"speed_name\":\"high\",\"speed_values\":[{\"lang\":\"en\",\"speed_synonym\":[\"High\"]}]}]",
+        "available_fan_speeds_type": "json",
         "trait_sensorstate": false,
         "sensor_states_supported": [],
-        "arm_levels_ordered": true,
+        "arm_levels_ordered": false,
         "trait_fill": false,
-        "available_fill_levels_file": "availableFillLevels.json",
+        "available_fill_levels_file": "availableFillLevels_<id>.json",
         "available_fill_levels_type": "str",
         "supports_fill_percent": false,
         "ordered_fill_levels": true,
         "trait_armdisarm": false,
-        "available_arm_levels_file": "availableArmLevels.json",
+        "available_arm_levels_file": "availableArmLevels_<id>.json",
         "available_arm_levels_type": "str",
         "trait_energystorage": false,
         "is_rechargeable": false,
         "query_only_energy_storage": false,
-        "energy_storage_distance_unit_for_ux": "KILOMETERS",
+        "energy_storage_distance_unit_for_ux": "",
         "trait_dispense": false,
-        "supported_dispense_items_file": "supportedDispenseItems.json",
+        "supported_dispense_items_file": "supportedDispenseItems_<id>.json",
         "supported_dispense_items_type": "str",
-        "supported_dispense_presets_file": "supportedDispensePresets.json",
+        "supported_dispense_presets_file": "supportedDispensePresets_<id>.json",
         "supported_dispense_presets_type": "str",
         "trait_networkcontrol": false,
         "supports_enabling_guest_network": false,
@@ -178,7 +179,20 @@
         "supports_disabling_network_profile": false,
         "supports_network_download_speedtest": false,
         "supports_network_upload_speedtest": false,
-        "trait_objectdetection": true,
+        "trait_objectdetection": false,
+        "trait_occupancysensing": false,
+        "occupancy_sensing_pir": true,
+        "occupancy_sensing_ultrasonic": false,
+        "occupancy_sensing_physical_contact": false,
+        "occupied_to_unoccupied_delay_sec_pir": "",
+        "unoccupied_to_occupied_delay_sec_pir": "",
+        "unoccupied_to_occupied_event_threshold_pir": "",
+        "occupied_to_unoccupied_delay_sec_ultrasonic": "",
+        "unoccupied_to_occupied_delay_sec_ultrasonic": "",
+        "unoccupied_to_occupied_event_threshold_ultrasonic": "",
+        "occupied_to_unoccupied_delay_sec_physical_contact": "",
+        "unoccupied_to_occupied_delay_sec_physical_contact": "",
+        "unoccupied_to_occupied_event_threshold_physical_contact": "",
         "show_trait": "selected",
         "advanced_settings": true,
         "ct_appselector": "",
@@ -255,78 +269,128 @@
         "pin_toggles": "",
         "pin_transportcontrol": "",
         "pin_volume": "",
-        "x": 650,
-        "y": 540,
-        "wires": [
-            []
-        ]
-    },
-    {
-        "id": "b20005f.91069f8",
-        "type": "inject",
-        "z": "dc2de837.a34868",
-        "name": "Alice at Front Door",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": "10",
-        "topic": "ObjectDetection",
-        "payload": "{\"named\":\"Alice\"}",
-        "payloadType": "json",
-        "x": 430,
-        "y": 500,
+        "x": 410,
+        "y": 640,
         "wires": [
             [
-                "43a13163.4a3e6"
+                "ad6b39fc55395d5e"
             ]
         ]
     },
     {
-        "id": "61d16f84.337cd",
-        "type": "inject",
-        "z": "dc2de837.a34868",
-        "name": "2 people at Front Door",
-        "props": [
-            {
-                "p": "payload"
-            },
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
-        "repeat": "",
-        "crontab": "",
-        "once": false,
-        "onceDelay": "10",
-        "topic": "ObjectDetection",
-        "payload": "{\"unclassified\":2}",
-        "payloadType": "json",
-        "x": 420,
-        "y": 540,
-        "wires": [
-            [
-                "43a13163.4a3e6"
-            ]
-        ]
-    },
-    {
-        "id": "8212b80fcb259876",
-        "type": "comment",
-        "z": "dc2de837.a34868",
-        "name": "Caution",
-        "info": "For notifications to work, you need to open the Google Home App, go to the settings of this specific device and enable \"Spoken Notifications\".",
+        "id": "ad6b39fc55395d5e",
+        "type": "debug",
+        "z": "ba4ea2f93145cb4f",
+        "name": "debug 179",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
         "x": 610,
-        "y": 500,
+        "y": 640,
         "wires": []
+    },
+    {
+        "id": "bb1e7ec8956c3be5",
+        "type": "inject",
+        "z": "ba4ea2f93145cb4f",
+        "name": "Speed low",
+        "props": [
+            {
+                "p": "payload.currentFanSpeedSetting",
+                "v": "low",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 180,
+        "y": 580,
+        "wires": [
+            [
+                "fa83f8ae00662068"
+            ]
+        ]
+    },
+    {
+        "id": "4b2be96ec92aadd2",
+        "type": "inject",
+        "z": "ba4ea2f93145cb4f",
+        "name": "Speed high",
+        "props": [
+            {
+                "p": "payload.currentFanSpeedSetting",
+                "v": "high",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 190,
+        "y": 620,
+        "wires": [
+            [
+                "fa83f8ae00662068"
+            ]
+        ]
+    },
+    {
+        "id": "2d76d026ef0f4760",
+        "type": "inject",
+        "z": "ba4ea2f93145cb4f",
+        "name": "On",
+        "props": [
+            {
+                "p": "payload.on",
+                "v": "true",
+                "vt": "bool"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 170,
+        "y": 700,
+        "wires": [
+            [
+                "fa83f8ae00662068"
+            ]
+        ]
+    },
+    {
+        "id": "0cf56e3613457fd8",
+        "type": "inject",
+        "z": "ba4ea2f93145cb4f",
+        "name": "Off",
+        "props": [
+            {
+                "p": "payload.on",
+                "v": "false",
+                "vt": "bool"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 170,
+        "y": 660,
+        "wires": [
+            [
+                "fa83f8ae00662068"
+            ]
+        ]
     }
 ]
