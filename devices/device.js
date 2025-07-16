@@ -153,7 +153,7 @@ module.exports = function (RED) {
                     this.trait.energystorage = true;
                     break;
                 case "CLOSET": // Closet
-                    this.trait.closet = true;
+                    this.trait.openclose = true;
                     break;
                 case "COFFEE_MAKER": // Coffee Maker
                     this.trait.onoff = true;
@@ -176,6 +176,8 @@ module.exports = function (RED) {
                 case "DOOR": // Door
                     this.trait.openclose = true;
                     break;
+                case "DOORBELL": // Doorbell
+                    break;
                 case "DRAWER": // Drawer
                     this.trait.openclose = true;
                     break;
@@ -194,6 +196,12 @@ module.exports = function (RED) {
                     break;
                 case "FRYER": // Fryer
                     this.trait.onoff = true;
+                    break;
+                case "GAME_CONSOLE": // Game console
+                    this.trait.appselector = true;
+                    this.trait.mediastate = true;
+                    this.trait.onoff = true;
+                    this.trait.transportcontrol = true;
                     break;
                 case "GARAGE": // Garage
                     this.trait.openclose = true;
@@ -252,6 +260,9 @@ module.exports = function (RED) {
                 case "PRESSURECOOKER": // Pressure cooker
                     this.trait.onoff = true;
                     break;
+                case "PUMP": // Pump
+                    this.trait.onoff = true;
+                    break;
                 case "RADIATOR": // Radiator
                     this.trait.onoff = true;
                     break;
@@ -278,7 +289,6 @@ module.exports = function (RED) {
                     this.trait.armdisarm = true;
                     break;
                 case "SENSOR": // Sensor
-                    this.trait.sensorstate = true;
                     break;
                 case "SETTOP": // Settop
                     this.trait.appselector = true;
@@ -293,6 +303,7 @@ module.exports = function (RED) {
                     this.trait.openclose = true;
                     break;
                 case "SMOKE_DETECTOR": // Smoke detector
+                    this.trait.sensorstate = true;
                     break;
                 case "SOUNDBAR": // Soundbar
                     this.trait.volume = true;
@@ -382,6 +393,7 @@ module.exports = function (RED) {
             // Brightness
             this.command_only_brightness = config.command_only_brightness;
             // CameraStream
+            this.need_auth_token = true == config.need_auth_token;
             this.auth_token = (config.auth_token || '').trim();
             this.hls = (config.hls || '').trim();
             this.hls_app_id = (config.hls_app_id || '').trim();
@@ -1345,7 +1357,7 @@ module.exports = function (RED) {
             }
             if (me.trait.camerastream) {
                 attributes['cameraStreamSupportedProtocols'] = me.camera_stream_supported_protocols;
-                attributes['cameraStreamNeedAuthToken'] = me.auth_token.length > 0;
+                attributes['cameraStreamNeedAuthToken'] = me.need_auth_token;
             }
             if (me.trait.cook) {
                 attributes['supportedCookingModes'] = me.supported_cooking_modes;
@@ -2437,16 +2449,16 @@ module.exports = function (RED) {
                     }
                 } else if (upper_topic === 'CAMERASTREAMAUTHTOKEN') {
                     const auth_token = Formats.formatValue('cameraStreamAuthToken', msg.payload, Formats.STRING, '');
-                    if (auth_token != me.auth_token) {
-                        me.auth_token = auth_token;
-                        if (Object.prototype.hasOwnProperty.call(me.device.properties.attributes, "cameraStreamNeedAuthToken")) {
-                            let cameraStreamNeedAuthToken = me.device.properties.attributes.cameraStreamNeedAuthToken;
-                            if (cameraStreamNeedAuthToken != (auth_token.length > 0)) {
-                                me.device.properties.attributes['cameraStreamNeedAuthToken'] = auth_token.length > 0;
-                                me.clientConn.app.ScheduleRequestSync();
-                            }
+                    //if (auth_token != me.auth_token) {
+                    me.auth_token = auth_token;
+                    /*if (Object.prototype.hasOwnProperty.call(me.device.properties.attributes, "cameraStreamNeedAuthToken")) {
+                        let cameraStreamNeedAuthToken = me.device.properties.attributes.cameraStreamNeedAuthToken;
+                        if (cameraStreamNeedAuthToken != (auth_token.length > 0)) {
+                            me.device.properties.attributes['cameraStreamNeedAuthToken'] = auth_token.length > 0;
+                            me.clientConn.app.ScheduleRequestSync();
                         }
-                    }
+                    }*/
+                    //}
                 } else if (upper_topic === 'GUESTNETWORKPASSWORD') {
                     me.guest_network_password = Formats.formatValue('guestNetworkPassword', msg.payload, Formats.STRING);
                 } else if (me.trait.objectdetection && upper_topic === 'OBJECTDETECTION') {
