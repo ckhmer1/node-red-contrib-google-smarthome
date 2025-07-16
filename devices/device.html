@@ -96,6 +96,7 @@
             <option value='AWNING' data-i18n='device.device_type.AWNING'></option>
             <option value='BATHTUB' data-i18n='device.device_type.BATHTUB'></option>
             <option value='BED' data-i18n='device.device_type.BED'></option>
+            <option value='BLANKET' data-i18n='device.device_type.BLANKET'></option>
             <option value='BLENDER' data-i18n='device.device_type.BLENDER'></option>
             <option value='BLINDS' data-i18n='device.device_type.BLINDS'></option>
             <option value='BOILER' data-i18n='device.device_type.BOILER'></option>
@@ -118,6 +119,7 @@
             <option value='FIREPLACE' data-i18n='device.device_type.FIREPLACE'></option>
             <option value='FREEZER' data-i18n='device.device_type.FREEZER'></option>
             <option value='FRYER' data-i18n='device.device_type.FRYER'></option>
+            <option value='GAME_CONSOLE' data-i18n='device.device_type.GAME_CONSOLE'></option>
             <option value='GARAGE' data-i18n='device.device_type.GARAGE'></option>
             <option value='GATE' data-i18n='device.device_type.GATE'></option>
             <option value='GRILL' data-i18n='device.device_type.GRILL'></option>
@@ -137,6 +139,7 @@
             <option value='PERGOLA' data-i18n='device.device_type.PERGOLA'></option>
             <option value='PETFEEDER' data-i18n='device.device_type.PETFEEDER'></option>
             <option value='PRESSURECOOKER' data-i18n='device.device_type.PRESSURECOOKER'></option>
+            <option value='PUMP' data-i18n='device.device_type.PUMP'></option>
             <option value='RADIATOR' data-i18n='device.device_type.RADIATOR'></option>
             <option value='REFRIGERATOR' data-i18n='device.device_type.REFRIGERATOR'></option>
             <option value='REMOTECONTROL' data-i18n='device.device_type.REMOTECONTROL'></option>
@@ -3237,6 +3240,10 @@
                         recommended_traits = ["scene"];
                         required_traits = ["modes"];
                         break;
+                    case "BLANKET": // Blanket
+                        recommended_traits = ["onoff", "modes", "toggles"];
+                        required_traits = [];
+                        break;
                     case "BLENDER": // Blender
                         recommended_traits = ["cook", "startstop", "timer"];
                         required_traits = ["onoff"];
@@ -3325,6 +3332,10 @@
                         recommended_traits = ["cook", "startstop", "timer"];
                         required_traits = ["onoff"];
                         break;
+                    case "GAME_CONSOLE": // Game console
+                        recommended_traits = ["volume"];
+                        required_traits = ["appselector", "mediastate", "onoff", "transportcontrol"];
+                        break;
                     case "GARAGE": // Garage
                         recommended_traits = [];
                         required_traits = ["openclose"];
@@ -3399,6 +3410,10 @@
                         break;
                     case "PRESSURECOOKER": // Pressure cooker
                         recommended_traits = ["cook", "timer"];
+                        required_traits = ["onoff"];
+                        break;
+                    case "PUMP": // Pump
+                        recommended_traits = [];
                         required_traits = ["onoff"];
                         break;
                     case "RADIATOR": // Radiator

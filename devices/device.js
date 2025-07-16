@@ -153,7 +153,7 @@ module.exports = function (RED) {
                     this.trait.energystorage = true;
                     break;
                 case "CLOSET": // Closet
-                    this.trait.closet = true;
+                    this.trait.openclose = true;
                     break;
                 case "COFFEE_MAKER": // Coffee Maker
                     this.trait.onoff = true;
@@ -176,6 +176,8 @@ module.exports = function (RED) {
                 case "DOOR": // Door
                     this.trait.openclose = true;
                     break;
+                case "DOORBELL": // Doorbell
+                    break;
                 case "DRAWER": // Drawer
                     this.trait.openclose = true;
                     break;
@@ -194,6 +196,12 @@ module.exports = function (RED) {
                     break;
                 case "FRYER": // Fryer
                     this.trait.onoff = true;
+                    break;
+                case "GAME_CONSOLE": // Game console
+                    this.trait.appselector = true;
+                    this.trait.mediastate = true;
+                    this.trait.onoff = true;
+                    this.trait.transportcontrol = true;
                     break;
                 case "GARAGE": // Garage
                     this.trait.openclose = true;
@@ -252,6 +260,9 @@ module.exports = function (RED) {
                 case "PRESSURECOOKER": // Pressure cooker
                     this.trait.onoff = true;
                     break;
+                case "PUMP": // Pump
+                    this.trait.onoff = true;
+                    break;
                 case "RADIATOR": // Radiator
                     this.trait.onoff = true;
                     break;
@@ -278,7 +289,6 @@ module.exports = function (RED) {
                     this.trait.armdisarm = true;
                     break;
                 case "SENSOR": // Sensor
-                    this.trait.sensorstate = true;
                     break;
                 case "SETTOP": // Settop
                     this.trait.appselector = true;
@@ -293,6 +303,7 @@ module.exports = function (RED) {
                     this.trait.openclose = true;
                     break;
                 case "SMOKE_DETECTOR": // Smoke detector
+                    this.trait.sensorstate = true;
                     break;
                 case "SOUNDBAR": // Soundbar
                     this.trait.volume = true;
