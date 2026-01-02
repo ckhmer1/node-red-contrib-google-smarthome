@@ -6,21 +6,28 @@ on:
     types: [created]
   workflow_dispatch:
 
+permissions:
+  id-token: write  # Required for OIDC trusted publishing to NPM
+  contents: read
+
 jobs:
   publish-npm:
     name: Publish Node-RED package
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: latest
           cache: npm
-      - uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{secrets.NPM_TOKEN}}
+      - name: npm Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: npm Publish
+        run: npm publish
       - name: Publish to Node-RED Library
         uses: Hacksore/node-red-flow@v2
         with:

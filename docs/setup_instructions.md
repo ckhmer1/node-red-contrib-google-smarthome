@@ -175,7 +175,7 @@ Now we will install and configure the module in Node-RED.
       This tutorial assumes a simple path setup, so leave it empty.
     * Use external SSL offload: If enabled, the smarthome service will use HTTP instead of HTTPS. This allows you to use
       a reverse proxy such as Caddy or Nginx Proxy Manager to manage SSL certificates. Also see our
-      [guide on reverse proxies](docs/reverse_proxies.md).
+      [guide on reverse proxies](reverse_proxies.md).
     * Public key: Path to the SSL certificate file, e.g. `fullchain.pem` from Let's Encrypt.
     * Private Key: Path to private SSL key file, e.g. `privkey.pem` from Let's Encrypt.
         * Don't set if you use SSL offloading.
@@ -321,6 +321,7 @@ Finally, we will link the Google Home App to the Node-RED service.
    ```
 
 9. Assign your device to a room. Unassigned devices may experience delayed state updates in the app.
+   To assign a device to a room, open the Google Home app, long-tap on the device, tap the settings icon and select "Room".
 
 ---
 

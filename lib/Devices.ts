@@ -1,6 +1,6 @@
 /**
  * node-red-contrib-google-smarthome
- * Copyright (C) 2024 Michael Jacobsen and others.
+ * Copyright (C) 2025 Michael Jacobsen and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-'use strict';
+import { GoogleSmartHome } from './SmartHome';
 
 const syncRequestDelay = 5000;
 
@@ -24,13 +24,16 @@ const syncRequestDelay = 5000;
  * Devices
  *
  */
-class Devices {
+export default class Devices {
+    private _smarthome: GoogleSmartHome;
+
+
     /**
      * Constructor
      *
      * @param {GoogleSmartHome} smarthome
      */
-    constructor(smarthome) {
+    constructor(smarthome: GoogleSmartHome) {
         this._smarthome = smarthome;
         this._nodes = {};
         this._devicesSyncTimer = null;
@@ -181,7 +184,7 @@ class Devices {
     }
 
     /**
-     * Set states for multiple devices at once.
+     * Sets states for multiple devices.
      *
      * Example input is:
      * {
@@ -190,7 +193,7 @@ class Devices {
      *     }
      * }
      *
-     * @param {object} states
+     * @param {object} states - States to set
      */
     setStates(states) {
         this._smarthome.debug('Device:setStates()');
@@ -216,7 +219,7 @@ class Devices {
      * }, {
      *   "id": "234"
      * }]
-     * @returns {Array} ["123", "234"]
+     * @returns {string[]} ["123", "234"]
      */
     getDeviceIds(devices) {
         let deviceIds = [];
@@ -263,5 +266,3 @@ class Devices {
         }, syncRequestDelay);
     }
 }
-
-module.exports = Devices;

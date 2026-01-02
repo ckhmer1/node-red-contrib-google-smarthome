@@ -1,20 +1,25 @@
-const js = require('@eslint/js');
-const jsdoc = require('eslint-plugin-jsdoc'); 
-const globals = require('globals'); 
+import js from '@eslint/js';
+import jsdoc from 'eslint-plugin-jsdoc'; 
+import globals from 'globals'; 
 
-/** @type {import('eslint').Linter.FlatConfig[]} */
-module.exports = [
+/** @type {import('eslint').Linter.Config[]} */
+export default [
+    // exclude build output
+    {
+        ignores: ["dist/**"]
+    },
+
     js.configs.recommended,
     jsdoc.configs['flat/recommended'],
     {
-        files: ["**/*.js", "**/*.html"],
+        files: ["**/*.{js,mjs}", "**/*.html"],
         languageOptions: {
             globals: {
                 ...globals.es6,
                 ...globals.node,
                 RED: "readonly"
             },
-            sourceType: "commonjs"
+            sourceType: "module"
         },
         plugins: {
             jsdoc: jsdoc,

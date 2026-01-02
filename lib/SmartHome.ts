@@ -1,6 +1,6 @@
 /**
  * node-red-contrib-google-smarthome
- * Copyright (C) 2024 Michael Jacobsen and others.
+ * Copyright (C) 2025 Michael Jacobsen and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,32 +16,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-'use strict';
+import http from 'http';
+import https from 'https';
+import express from 'express';
+import stoppable from 'stoppable';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { EventEmitter } from 'events';
+import dnssd from '@gravitysoftware/dnssd';
+import dgram from 'dgram';
+import { NodeAPI } from 'node-red';
 
-const http          = require('http');
-const https         = require('https');
-const express       = require('express');
-const stoppable     = require('stoppable');
-const helmet        = require('helmet');
-const morgan        = require('morgan');
-const cors          = require('cors');
-const fs            = require('fs');
-const path          = require('path');
-const events        = require('events');
-const dnssd         = require('@gravitysoftware/dnssd');
-const udp           = require('dgram');
-
-const Auth          = require('./Auth.js');
-const Devices       = require('./Devices.js');
-const HttpAuth      = require('./HttpAuth.js');
-const HttpActions   = require('./HttpActions.js');
+import Auth from './Auth';
+import Devices from './Devices';
+import HttpAuth from './HttpAuth';
+import HttpActions from './HttpActions';
+import { MgmtNode } from '../google-mgmt';
 
 /******************************************************************************************************************
  * GoogleSmartHome
  *
  */
-class GoogleSmartHome {
-    constructor(mgmtNode, nodeId, userDir, httpNodeRoot, useGoogleLogin, googleClientId, emails, username, password, accessTokenDuration, usehttpnoderoot,
+export class GoogleSmartHome {
+    public auth: Auth;
+    private devices: Devices;
+    public httpActions: HttpActions;
+    public httpAuth: HttpAuth;
+    private _mgmtNode: MgmtNode;
+    public app: express.Express;
+    private localApp: express.Express;
+
+
+    constructor(mgmtNode: MgmtNode, nodeId, userDir, httpNodeRoot, useGoogleLogin, googleClientId, emails, username, password, accessTokenDuration, usehttpnoderoot,
         httpPath, httpPort, localScanType, localScanPort, httpLocalPort, nodeRedUsesHttps, ssloffload, publicKey, privateKey, jwtkeyFile, clientid,
         clientsecret, reportStateInterval, requestSyncDelay, setStateDelay, debug, debug_function, error_function) {
 
@@ -97,7 +106,7 @@ class GoogleSmartHome {
         }
         this.auth.setAccessTokenDuration(accessTokenDuration);
 
-        this.emitter = new events.EventEmitter();
+        this.emitter = new EventEmitter();
 
         // httpNodeRoot is the root url for nodes that provide HTTP endpoints. If set to false, all node-based HTTP endpoints are disabled. 
         if (this._httpNodeRoot !== false) {
@@ -143,6 +152,7 @@ class GoogleSmartHome {
     /**
      * Retrieves the router instance from an Express app object.
      * This method provides compatibility for Express 4 (app._router) and Express 5 (app.router).
+     *
      * @param {object} appInstance - The Express application instance.
      * @returns {object|undefined} The router object if found, otherwise undefined.
      */
@@ -150,9 +160,12 @@ class GoogleSmartHome {
         return appInstance._router || appInstance.router;
     }
 
-    //
-    //
-    //
+    /**
+     * Joins multiple path segments into a single path.
+     *
+     * @param {...string} paths - The path segments to join
+     * @returns {string} The joined path
+     */
     Path_join(...paths) {
         let full_path = '';
 
@@ -170,9 +183,13 @@ class GoogleSmartHome {
         }
         return full_path;
     }
-    //
-    //
-    //
+
+    /**
+     * Determines the type of a HTTP route (GET, POST, OPTIONS, etc.).
+     *
+     * @param {object} route - The route object
+     * @returns {string} The type of the route
+     */
     GetRouteType(route) {
         if (route) {
             if (route.route.methods['get'] && route.route.methods['post']) return "all";
@@ -182,10 +199,21 @@ class GoogleSmartHome {
         }
         return 'unknown';
     }
-    //
-    //
-    //
+
+    /**
+     * Unregisters all URLs we registered with Node-RED's webserver.
+     * This is only necessary if the webserver from Node-RED is used. If we
+     * use our own webserver, routes are automatically removed when we
+     * stop the webserver.
+     *
+     * @param {express} REDapp - the Express server from Node-RED
+     */
     UnregisterUrl(REDapp) {
+        // Skip if we are using our own webserver instead of Node-RED's webserver
+        if (this._httpPort > 0) {
+            return;
+        }
+
         const me = this;
         const redAppRouter = this.getRouter(REDapp);
 
@@ -235,7 +263,7 @@ class GoogleSmartHome {
     //
     //
     StopUDPDeviceScanServer() {
-        ['udp4', 'udp6'].forEach((type) => {
+        ['udp4', /*'udp6'*/].forEach((type) => {
             if (Object.prototype.hasOwnProperty.call(this._localUDPServers, type) && this._localUDPServers[type] !== null) {
                 this._localUDPServers[type].close();
                 delete this._localUDPServers[type];
@@ -257,8 +285,9 @@ class GoogleSmartHome {
         }
 
         function onMessage(msg, info) {
-            const data = msg.toString();
-            if (data === me._localScanPacket) {
+            const data = msg.toString().trim();
+            // Accept packet with quotes too in case user sends test packet with quotes (echo "..." | nc -...)
+            if (data === me._localScanPacket || data === '"' + me._localScanPacket + '"') {
                 const sync_res = Buffer.from(JSON.stringify({clientId: me._nodeId}), 'utf8');
                 this.send(sync_res, info.port, info.address, function(error){
                     if(error) {
@@ -280,8 +309,8 @@ class GoogleSmartHome {
             me.debug(`Service Scan UDP server: server ${this.type} server closed`);
         }
 
-        ['udp4', 'udp6'].forEach((type) => {
-            me._localUDPServers[type] = udp.createSocket({type: type, ipv6Only: type === 'udp6'});
+        ['udp4', /*'udp6'*/].forEach((type) => {
+            me._localUDPServers[type] = dgram.createSocket({type: type, ipv6Only: type === 'udp6'});
             me._localUDPServers[type].on('error', onError);
             me._localUDPServers[type].on('message', onMessage);
             me._localUDPServers[type].on('listening', onListening);
@@ -289,9 +318,10 @@ class GoogleSmartHome {
             me._localUDPServers[type].bind(me._localDiscoveryPort);
         });
     }
-    //
-    //
-    //
+
+    /**
+     * Stops the mDNS advertisement for local fulfillment.
+     */
     StopMDNSAdvertisement(){
         if (this._dnssdAdRunning) {
             this._dnssdAdRunning = false;
@@ -300,9 +330,10 @@ class GoogleSmartHome {
             this.dnssdAd = null;
         }
     }
-    //
-    //
-    //
+
+    /**
+     * Starts the mDNS advertisement for local fulfillment.
+     */
     StartMDNSAdvertisement() {
         const me = this;
         this.StopMDNSAdvertisement();
@@ -569,9 +600,10 @@ class GoogleSmartHome {
         }
         return {};
     }
-    //
-    //
-    //
+
+    /**
+     * Reports the states of all devices to Google.
+     */
     ReportAllStates() {
         let states = this.devices.getStates();
 
@@ -580,9 +612,10 @@ class GoogleSmartHome {
         }
 
     }
-    //
-    //
-    //
+
+    /**
+     * Sends a SYNC request to Google.
+     */
     RequestSync() {
         this.httpActions.requestSync();
     }
@@ -625,7 +658,7 @@ class GoogleSmartHome {
      * @param {string} remoteAppJsVersion - version number of the script running on the speaker
      */
     checkAppJsVersion(remoteAppJsVersion) {
-        const appJsPath = path.resolve(__dirname, '../local-execution/app.js');
+        const appJsPath = path.resolve(__dirname, '../../local-execution/app.js');
         fs.readFile(appJsPath, 'utf8', (err, data) => {
             if (err) {
                 this.error('SmartHome:checkAppJsVersion(): Cannot read app.js file (' + err + ')');
@@ -657,18 +690,35 @@ class GoogleSmartHome {
     IsHttpServerRunning() {
         return this._httpServerRunning || this._httpPort <= 0;
     }
-    //
-    //
-    //
+
+    /**
+     * Logs debug information.
+     *
+     * @param {string} data - The debug information to log.
+     */
     debug(data) {
         this.debug_function(data);
     }
-    //
-    //
-    //
+
+    /**
+     * Logs error information.
+     *
+     * @param {string} data - The error information to log.
+     */
     error(data) {
         this.error_function(data);
     }
 }
 
-module.exports = GoogleSmartHome;
+/******************************************************************************************************************/
+
+/** Global Node-RED instance */
+export let RED: NodeAPI;
+
+/**
+ * Set the global Node-RED instance.
+ * @param val The Node-RED instance to set.
+ */
+export function setRED(val: NodeAPI): void {
+    RED = val;
+}

@@ -1,6 +1,6 @@
 /**
  * node-red-contrib-google-smarthome
- * Copyright (C) 2024 Michael Jacobsen and others.
+ * Copyright (C) 2025 Michael Jacobsen and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,13 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-'use strict';
+/**
+ * @typedef {import('express').Request} Request
+ * @typedef {import('express').Response} Response
+ */
 
-const path = require('path');
-const UidGenerator = require('uid-generator');
-const { google } = require('googleapis');
-const fs = require('fs');
-const ipRangeCheck = require('ip-range-check');
+import fs from 'fs';
+import path from 'path';
+import UidGenerator from 'uid-generator';
+import { google } from 'googleapis';
+import ipRangeCheck from 'ip-range-check';
+import { GoogleSmartHome } from './SmartHome';
 
 const userId = '0';
 
@@ -46,13 +50,16 @@ const isLocalIP = function (ip) {
  * HttpActions
  *
  */
-class HttpActions {
+export default class HttpActions {
+    private _smarthome: GoogleSmartHome;
+
+
     /**
      * Constructor
      *
-     * @param {GoogleSmartHome} smarthome
+     * @param {GoogleSmartHome} smarthome - Instance of the GoogleSmartHome class
      */
-    constructor(smarthome) {
+    constructor(smarthome: GoogleSmartHome) {
         this._smarthome = smarthome;
         this._reqGen = new UidGenerator(128, UidGenerator.BASE62);
     }
@@ -147,19 +154,32 @@ class HttpActions {
         appHttp.options(me._smarthome.Path_join(httpLocalRoot, 'smarthome'), function (request, response) {
             me._options(request, response);
         });
+
+        /**
+         * Endpoint to check HTTP reachability.
+         */
+        appHttp.get(me._smarthome.Path_join(httpLocalRoot, 'check'), function (request, response) {
+            me._smarthome.debug('HttpActions:httpLocalActionsRegister(/check)');
+            response.send('SUCCESS');
+        });
     }
-    /******************************************************************************************************************
-     * private methods
-     *
+
+    /**
+     * @param {Request} request   - Express request object
+     * @param {Response} response - Express response object
+     * @private
      */
     _options(request, response) {
         response.status(200).set({
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         }).send('null');
     }
-    //
-    //
-    //
+
+    /**
+     * @param {Request} request   - Express request object
+     * @param {Response} response - Express response object
+     * @private
+     */
     _post(request, response, url) {
         let me = this;
         let reqdata = request.body;
@@ -354,7 +374,7 @@ class HttpActions {
 
                 case 'action.devices.REACHABLE_DEVICES':
                     me._smarthome.debug('HttpActions:httpActionsRegister(/' + url + '): REACHABLE_DEVICES');
-                    me._reachable_devices(reqdata.requestId, reqdata.inputs[i].payload.commands, response);
+                    me._reachable_devices(reqdata.requestId, response);
                     break;
 
                 default:
@@ -367,9 +387,11 @@ class HttpActions {
             }
         }
     }
-    //
-    //
-    //
+
+    /**
+     * @param {Response} response - Express response object
+     * @private
+     */
     _sync(requestId, response) {
         this._smarthome.debug('HttpActions:_sync()');
 
@@ -433,9 +455,11 @@ class HttpActions {
 
         return deviceProps;
     }
-    //
-    //
-    //
+
+    /**
+     * @param {Response} response - Express response object
+     * @private
+     */
     _query(requestId, devices, response) {
         this._smarthome.debug('HttpActions:_query()');
 
@@ -462,9 +486,11 @@ class HttpActions {
         response.status(200).json(deviceStates);
         return deviceStates;
     }
-    // Called by http post
-    //
-    //
+
+    /**
+     * @param {Response} response - Express response object
+     * @private
+     */
     _exec(requestId, commands, response, is_local) {
         this._smarthome.debug('HttpActions:_exec()');
 
@@ -521,9 +547,10 @@ class HttpActions {
 
         return resBody;
     }
-    // Called by _exec
-    //
-    //
+
+    /**
+     * @private
+     */
     _execDevice(command, device, is_local) {
         let me = this;
 
@@ -587,10 +614,12 @@ class HttpActions {
             executionStates: result.executionStates,
         };
     }
-    //
-    //
-    //
-    _reachable_devices(requestId, devices, response) {
+
+    /**
+     * @param {Response} response - Express response object
+     * @private
+     */
+    _reachable_devices(requestId, response) {
         this._smarthome.debug('HttpActions:_reachable_devices()');
 
         let reachableDevices = this._smarthome.devices.getReachableDeviceIds();
@@ -696,9 +725,10 @@ class HttpActions {
                 me._smarthome.error(myError);
             });
     }
-    //
-    //
-    //
+
+    /**
+     * Sends a request to Google to sync devices.
+     */
     requestSync() {
         let me = this;
 
@@ -753,5 +783,3 @@ class HttpActions {
             });
     }
 }
-
-module.exports = HttpActions;

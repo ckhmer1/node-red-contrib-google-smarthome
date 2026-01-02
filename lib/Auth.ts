@@ -1,6 +1,6 @@
 /**
  * node-red-contrib-google-smarthome
- * Copyright (C) 2024 Michael Jacobsen and others.
+ * Copyright (C) 2025 Michael Jacobsen and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,24 +16,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-'use strict';
-
-const path           = require('path');
-const fs             = require('fs');
-const UidGenerator   = require('uid-generator');
-const util           = require('util');
+import path from 'path';
+import fs from 'fs';
+import util from 'util';
+import UidGenerator from 'uid-generator';
+import { GoogleSmartHome } from './SmartHome';
 
 /******************************************************************************************************************
  * Auth
  *
  */
-class Auth {
+export default class Auth {
+    private _smarthome: GoogleSmartHome;
+
+
     /**
      * Constructor
      *
      * @param {GoogleSmartHome} smarthome
      */
-    constructor(smarthome) {
+    constructor(smarthome: GoogleSmartHome) {
         this._smarthome = smarthome;
         this._clientId       = "";
         this._clientSecret   = "";
@@ -50,9 +52,13 @@ class Auth {
         this._tokenGen       = new UidGenerator(256, UidGenerator.BASE58);
         this._clearAllTokens();
     }
-    //
-    //
-    //
+
+    /**
+     * Loads the auth storage from file.
+     *
+     * @param {string} nodeId - ID of the config node
+     * @param {string} userDir - Node-RED's user directory
+     */
     loadAuthStorage(nodeId, userDir) {
         const me = this;
 
@@ -104,24 +110,36 @@ class Auth {
         let jk       = fs.readFileSync(jwtkeyFile);
         this._jwtkey = JSON.parse(jk.toString());
     }
-    //
-    //
-    //
+
+    /**
+     * Sets client ID and secret.
+     *
+     * @param {string} clientid - Client ID
+     * @param {string} clientsecret - Client secret
+     */
     setClientIdSecret(clientid, clientsecret) {
         this._clientId     = clientid;
         this._clientSecret = clientsecret;
     }
-    //
-    //
-    //
+
+    /**
+     * Sets username and password for classic login.
+     *
+     * @param {string} username - Username
+     * @param {string} password - Password
+     */
     setUsernamePassword(username, password) {
         this._useGoogleClientAuth = false;
         this._username = username;
         this._password = password;
     }
-    //
-    //
-    //
+
+    /**
+     * Sets Client ID and authorized email addresses for Google client authentication (a.k.a. Google Login).
+     *
+     * @param {string} clientid - Google Client ID
+     * @param {Array|string} emails - Authorized email addresses as array or string separated by ";"
+     */
     setGoogleClientIdAndEmails(clientid, emails) {
         this._useGoogleClientAuth = true;
         this._googleClientId = clientid;
@@ -131,27 +149,40 @@ class Auth {
             this._emails = emails;
         }
     }
-    //
-    //
-    //
+
+    /**
+     * Checks if Google client authentication (a.k.a. Google Login) is used.
+     *
+     * @returns {boolean} True if Google Client authentication is used, false otherwise
+     */
     useGoogleClientAuth() {
         return this._useGoogleClientAuth;
     }
-    //
-    //
-    //
+
+    /**
+     * Retrieves the Client ID for Google Client authentication (a.k.a. Google Login).
+     *
+     * @returns {string} Google Client ID
+     */
     getGoogleClientId() {
         return this._googleClientId;
     }
-    //
-    //
-    //
+
+    /**
+     * Retrieves the authorized email addresses for Google Client authentication (a.k.a. Google Login).
+     *
+     * @returns {string[]} Authorized email addresses
+     */
     getGoogleClientEmails() {
         return this._emails;
     }
-    //
-    //
-    //
+
+    /**
+     * Checks if the provided email address is valid for Google Client authentication (a.k.a. Google Login).
+     *
+     * @param {string} email - Email to check
+     * @returns {boolean} True if the email is valid, false otherwise
+     */
     isGoogleClientEmailValid(email) {
         if (this._useGoogleClientAuth) {
             return this._emails.includes(email);
@@ -176,9 +207,14 @@ class Auth {
     getAccessTokenDuration() {
         return this._accessTokenDuration;
     }
-    //
-    //
-    //
+
+    /**
+     * Checks if the provided username and password are valid.
+     *
+     * @param {string} username - Username to check
+     * @param {string} password - Password to check
+     * @returns {boolean} True if the username and password are valid, false otherwise.
+     */
     isValidUser(username, password) {
         if (this._username !== username) {
             this._smarthome.debug('Auth:isValidUser(): username does not match!');
@@ -243,15 +279,19 @@ class Auth {
     /**
      * Checks if the account is linked (that is, if we have refresh tokens).
      *
-     * @returns {boolean} True if account is linked (we have refrsh tokens), false otherwise.
+     * @returns {boolean} True if account is linked (we have refresh tokens), false otherwise.
      */
     isAccountLinked() {
         return Object.keys(this._authStorage.refreshTokens).length > 0;
     }
 
-    //
-    //
-    //
+    /**
+     * Checks if the provided client ID and secret are valid.
+     *
+     * @param {string} clientId - Client ID to check
+     * @param {string} [clientSecret] - Client secret to check
+     * @returns {boolean} True if the client ID and secret are valid, false otherwise
+     */
     isValidClient(clientId, clientSecret = undefined) {
         if (this._clientId !== clientId) {
             this._smarthome._mgmtNode.error(util.format('Auth:isValidClient(): clientId does not match (expected "%s", got "%s")!', this._clientId, clientId));
@@ -337,9 +377,13 @@ class Auth {
             expires_in: 60 * this._accessTokenDuration,
         };
     }
-    //
-    //
-    //
+
+    /**
+     * Refreshes the access token used by Google to authenticate with our service.
+     *
+     * @param {string} refreshToken - Refresh token
+     * @returns {object} Tokens
+     */
     refreshAccessToken(refreshToken) {
         let me = this;
         if (!this.isValidRefreshToken(refreshToken)) {
@@ -359,15 +403,23 @@ class Auth {
             expires_in: 60 * this._accessTokenDuration,
         };
     }
-    //
-    //
-    //
+
+    /**
+     * Checks if the provided access token is valid.
+     *
+     * @param {string} accessToken - Access token to check
+     * @returns {boolean} True if the access token is valid, false otherwise
+     */
     isValidAccessToken(accessToken) {
         return this.getuserForAccessToken(accessToken) !== null;
     }
-    //
-    //
-    //
+
+    /**
+     * Checks if the provided access token for local fulfillment is valid.
+     *
+     * @param {string} accessToken - Local access token to check
+     * @returns {boolean} True if the local access token is valid, false otherwise
+     */
     isValidLocalAccessToken(accessToken) {
         if (accessToken === this._authStorage.nextLocalAuthCode) {
             this._authStorage.localAuthCode = this._authStorage.nextLocalAuthCode;
@@ -377,9 +429,13 @@ class Auth {
         }
         return accessToken === this._authStorage.localAuthCode;
     }
-    //
-    //
-    //
+
+    /**
+     * Retrieves the user for the provided access token.
+     *
+     * @param {string} accessToken - Access token
+     * @returns {string|null} User or null if the access token is invalid
+     */
     getuserForAccessToken(accessToken) {
         if (accessToken === this._authStorage.localAuthCode || accessToken === this._authStorage.nextLocalAuthCode) {
             return "local execution";
@@ -400,9 +456,13 @@ class Auth {
         }
         return user;
     }
-    //
-    //
-    //
+
+    /**
+     * Checks if the provided refresh token is valid.
+     *
+     * @param {string} refreshToken - Refresh token to check
+     * @returns {boolean} True if the refresh token is valid, false otherwise
+     */
     isValidRefreshToken(refreshToken) {
         const refreshTokenInfo = this._authStorage.refreshTokens[refreshToken];
         if (typeof refreshTokenInfo === 'undefined') {
@@ -412,40 +472,58 @@ class Auth {
         this._smarthome.debug('Auth:isValidRefreshToken(): valid refreshToken ' + JSON.stringify(refreshToken) + " for user " + refreshTokenInfo);
         return true;
     }
-    //
-    //
-    //
+
+    /**
+     * Removes all tokens for the provided user.
+     *
+     * @param {string} user - User whose tokens should be removed
+     */
     removeAllTokensForUser(user) {
         this._removeAllTokensForUser(user);
         this._persistAuthStorage();
     }
-    //
-    //
-    //
+
+    /**
+     * Retrieves the client email from the JWT file.
+     *
+     * @returns {string} JWT client email
+     */
     getJwtClientEmail() {
         return this._jwtkey.client_email;
     }
-    //
-    //
-    //
+
+    /**
+     * Retrieves the private key from the JWT file.
+     *
+     * @returns {string} JWT private key
+     */
     getJwtPrivateKey() {
         return this._jwtkey.private_key;
     }
-    //
-    //
-    //
+
+    /**
+     * Retrieves the project ID from the JWT file.
+     *
+     * @returns {string} JWT Project ID
+     */
     getProjectId() {
         return this._jwtkey.project_id;
     }
-    //
-    //
-    //
+
+    /**
+     * Generates a random string.
+     *
+     * @returns {string} Random string
+     */
     genRandomString() {
         return this._tokenGen.generateSync();
     }
-    //
-    //
-    //
+
+    /**
+     * Retrieves the auth storage object.
+     *
+     * @returns {object} Auth storage
+     */
     getAuthStorage() {
         return this._authStorage;
     }
@@ -459,9 +537,12 @@ class Auth {
         }
         return this._authStorage.localAuthCode;
     }
-    /******************************************************************************************************************
-     * private methods
+
+    /**
+     * Generates a new access token.
      *
+     * @returns {string} New access token
+     * @private
      */
     _generateNewAccessToken() {
         while (true) {
@@ -471,6 +552,14 @@ class Auth {
             }
         }
     }
+
+    /**
+     * Generates an access token for the given user.
+     *
+     * @param {string} user - User for whom the access token should be generated
+     * @returns {string} Access token
+     * @private
+     */
     _generateAccessToken(user) {
         let accessToken = this._generateNewAccessToken();
         this._authStorage.accessTokens[accessToken] = {
@@ -479,7 +568,14 @@ class Auth {
         };
         return accessToken;
     }
-    //
+
+    /**
+     * Generates a refresh token for the given user.
+     *
+     * @param {string} user - User for whom the refresh token should be generated
+     * @returns {string} Refresh token
+     * @private
+     */
     _generateRefreshToken(user) {
         while (true) {
             let refreshToken = this.genRandomString();
@@ -552,5 +648,3 @@ class Auth {
         this.generateLocalAccessToken();
     }
 }
-
-module.exports = Auth;
