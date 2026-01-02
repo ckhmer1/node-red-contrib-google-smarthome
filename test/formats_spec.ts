@@ -1,6 +1,6 @@
 /**
  * node-red-contrib-google-smarthome
- * Copyright (C) 2024 Claudio Chimera and others.
+ * Copyright (C) 2025 Claudio Chimera and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const assert = require('assert');
-const formats = require('../lib/Formats');
+import assert from 'assert';
+import { describe, it } from 'mocha';
+import { Formats } from '../lib/Formats';
 
 /**
  * Format a value for output.
@@ -38,7 +39,7 @@ function outputValue(value)
  * `targetValue` and the type specified by `targetType`.
  *
  * @param {mixed[]} inputValues - The values to be tested for conversion
- * @param {string} targetType - The target type to which the values will be converted
+ * @param {number} targetType - The target type to which the values will be converted
  * @param {mixed} targetValue - The expected result of the conversion for each input value
  * @param {string} targetDescription - Description of the target value for log output
  */
@@ -48,7 +49,7 @@ function testConvertsToValue(inputValues, targetType, targetValue, targetDescrip
         it(`${outputValue(value)} converts to ${targetDescription}`, function () {
             this.timeout(1000);
 
-            let result = formats.formatValue('value', value, targetType);
+            let result = Formats.formatValue('value', value, targetType);
             assert.strictEqual(result, targetValue);
         });
     });
@@ -58,7 +59,7 @@ function testConvertsToValue(inputValues, targetType, targetValue, targetDescrip
  * Tests if trying to convert a list of values to a specific type results in an error being thrown.
  *
  * @param {mixed[]} inputValues - The values to be tested for conversion
- * @param {string} targetType - The target type to which the values will be converted
+ * @param {number} targetType - The target type to which the values will be converted
  * @param {string} targetDescription - Description of the target value for log output
  */
 function testForError(inputValues, targetType, targetDescription)
@@ -68,7 +69,7 @@ function testForError(inputValues, targetType, targetDescription)
             this.timeout(1000);
 
             assert.throws(() => {
-                formats.formatValue('value', value, targetType)
+                Formats.formatValue('value', value, targetType)
             });
         });
     });
@@ -80,7 +81,7 @@ describe('Format Conversion', function () {
     it(`default value is returned for undefined`, function () {
         this.timeout(1000);
 
-        let result = formats.formatValue('value', undefined, formats.STRING, 'default value for test');
+        let result = Formats.formatValue('value', undefined, Formats.STRING, 'default value for test');
         assert.strictEqual(result, 'default value for test');
     });
 
@@ -95,7 +96,7 @@ describe('Format Conversion', function () {
         2,
         '2',
     ];
-    testConvertsToValue(convertToTrue, formats.BOOL, true, 'boolean true');
+    testConvertsToValue(convertToTrue, Formats.BOOL, true, 'boolean true');
 
 
     let convertToFalse = [
@@ -106,21 +107,21 @@ describe('Format Conversion', function () {
         0,
         '0',
     ];
-    testConvertsToValue(convertToFalse, formats.BOOL, false, 'boolean false');
+    testConvertsToValue(convertToFalse, Formats.BOOL, false, 'boolean false');
 
 
     let convertToString10 = [
         10,
         '10',
     ];
-    testConvertsToValue(convertToString10, formats.STRING, '10', 'string "10"');
+    testConvertsToValue(convertToString10, Formats.STRING, '10', 'string "10"');
 
 
     let convertToFloat10point5 = [
         10.5,
         '10.5',
     ];
-    testConvertsToValue(convertToFloat10point5, formats.FLOAT, 10.5, 'float 10.5');
+    testConvertsToValue(convertToFloat10point5, Formats.FLOAT, 10.5, 'float 10.5');
 
 
     let convertToInt10 = [
@@ -131,31 +132,31 @@ describe('Format Conversion', function () {
         '0x00000A',
         '#00000A',
     ];
-    testConvertsToValue(convertToInt10, formats.INT, 10, 'int 10');
+    testConvertsToValue(convertToInt10, Formats.INT, 10, 'int 10');
 
     let convertToStringTrue = [
         true,
         'true',
     ];
-    testConvertsToValue(convertToStringTrue, formats.STRING, 'true', 'string true');
+    testConvertsToValue(convertToStringTrue, Formats.STRING, 'true', 'string true');
 
     let convertToStringFalse = [
         false,
         'false',
     ];
-    testConvertsToValue(convertToStringFalse, formats.STRING, 'false', 'string false');
+    testConvertsToValue(convertToStringFalse, Formats.STRING, 'false', 'string false');
 
 
     let errorWhenConvertedToBool = [
         undefined,
         'somevalue',
     ];
-    testForError(errorWhenConvertedToBool, formats.BOOL, 'bool');
+    testForError(errorWhenConvertedToBool, Formats.BOOL, 'bool');
 
 
     let errorWhenConvertedToFloat = [
         undefined,
         'somevalue',
     ];
-    testForError(errorWhenConvertedToFloat, formats.FLOAT, 'float');
+    testForError(errorWhenConvertedToFloat, Formats.FLOAT, 'float');
 });

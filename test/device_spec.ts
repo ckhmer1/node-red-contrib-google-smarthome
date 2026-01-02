@@ -1,6 +1,6 @@
 /**
  * node-red-contrib-google-smarthome
- * Copyright (C) 2024 Claudio Chimera and others.
+ * Copyright (C) 2025 Claudio Chimera and others.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,14 +16,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const path = require('path');
-const fs = require('fs');
-const helper = require('node-red-node-test-helper');
-const device = require('../devices/device.js');
-const google_smarthome = require('../google-smarthome.js');
-const google_mgmt = require('../google-mgmt.js');
+import fs from 'fs';
+import path from 'path';
+import helper from 'node-red-node-test-helper';
+import { describe, beforeEach, afterEach, it } from 'mocha';
+import { DeviceNode } from '../devices/device';
+import { GoogleSmartHomeNode } from '../google-smarthome';
+import { MgmtNode } from '../google-mgmt';
 
-helper.init(require.resolve('node-red'));
+helper.init();
 
 describe('Device Node', function () {
     beforeEach(function (done) {
@@ -45,7 +46,7 @@ describe('Device Node', function () {
         const flowPath = path.join(__dirname, 'device_flow.json');
         const flow = JSON.parse(fs.readFileSync(flowPath));
 
-        helper.load([google_smarthome, google_mgmt, device], flow, function () {
+        helper.load([GoogleSmartHomeNode, MgmtNode, DeviceNode], flow, function () {
             try {
                 const device1 = helper.getNode("device1");
                 device1.should.have.property('type', 'google-device');

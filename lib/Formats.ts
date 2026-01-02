@@ -16,13 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-'use strict';
-
 /******************************************************************************************************************
  * Helper functions to convert input values to target formats.
  *
  */
-const Formats = {
+export const Formats = {
     BOOL: 1,
     INT: 2,
     FLOAT: 4,
@@ -41,9 +39,9 @@ const Formats = {
      *
      * @param {string} key - Key to use in error messages
      * @param {*} value - Input value to convert
-     * @param {number} format - Target type to convert to (e.g. Fromats.BOOL, Formats.STRING)
+     * @param {number} format - Target type to convert to (e.g. Formats.BOOL, Formats.STRING)
      * @param {*} default_value - Target value to use if input is undefined
-     * @returns {*}
+     * @returns {*} Converted value
      */
     formatValue(key, value, format, default_value = undefined) {
         if (typeof value === 'undefined') {
@@ -52,7 +50,7 @@ const Formats = {
 
         if (typeof value === 'string') {
             switch (format) {
-                case Formats.BOOL: {
+                case this.BOOL: {
                     if(!isNaN(parseFloat(value)))
                         return this.formatValue(key, parseFloat(value), format, default_value);
 
@@ -66,10 +64,10 @@ const Formats = {
                         throw new Error('Type of ' + key + ' is string but it cannot be converted to a boolean');
                     }
                 }
-                case Formats.STRING: {
+                case this.STRING: {
                     return value;
                 }
-                case Formats.FLOAT: {
+                case this.FLOAT: {
                     let fval = parseFloat(value);
 
                     if (isNaN(fval)) {
@@ -78,7 +76,7 @@ const Formats = {
 
                     return fval;
                 }
-                case Formats.DATETIME: {
+                case this.DATETIME: {
                     return value;
                 }
                 default: {
@@ -98,16 +96,16 @@ const Formats = {
             }
         } else if (typeof value === 'number') {
             switch (format) {
-                case Formats.BOOL: {
+                case this.BOOL: {
                     return (value != 0);
                 }
-                case Formats.STRING: {
+                case this.STRING: {
                     return value.toString();
                 }
-                case Formats.INT: {
+                case this.INT: {
                     return parseInt(value);
                 }
-                case Formats.DATETIME: {
+                case this.DATETIME: {
                     let dval = new Date(value);
                     return dval.toISOString();
                 }
@@ -117,10 +115,10 @@ const Formats = {
             }
         } else if (typeof value === 'boolean') {
             switch (format) {
-                case Formats.BOOL: {
+                case this.BOOL: {
                     return value;
                 }
-                case Formats.STRING: {
+                case this.STRING: {
                     if (value) {
                         return "true";
                     } else {
@@ -146,5 +144,3 @@ const Formats = {
         }
     }
 };
-
-module.exports = Formats;
